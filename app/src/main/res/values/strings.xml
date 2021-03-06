@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AndroidDriveSync</string>
+    <string name="initiate_onboarding_button_before">Initiate OnBoarding</string>
+    <string name="initiate_onboarding_button_after">All Done</string>
+</resources>
