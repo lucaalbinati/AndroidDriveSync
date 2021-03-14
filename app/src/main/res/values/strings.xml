@@ -2,4 +2,5 @@
     <string name="app_name">AndroidDriveSync</string>
     <string name="initiate_onboarding_button_before">Initiate OnBoarding</string>
     <string name="initiate_onboarding_button_after">All Done</string>
+    <string name="default_web_client_id">617621809462-6on1g4pko6mng9liq5npt93jc2hlj8eu.apps.googleusercontent.com</string>
 </resources>
