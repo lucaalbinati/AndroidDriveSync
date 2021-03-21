@@ -5,17 +5,11 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/initiate_onboarding_button"
+        android:id="@+id/ping_drive_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal|center_vertical"
-        android:onClick="initiateOnBoarding"
-        android:text="@string/initiate_onboarding_button_before" />
-
-    <TextView
-        android:id="@+id/display_error_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="invisible" />
+        android:layout_gravity="center_horizontal"
+        android:onClick="pingDrive"
+        android:text="@string/ping_drive_button" />
 
 </LinearLayout>
