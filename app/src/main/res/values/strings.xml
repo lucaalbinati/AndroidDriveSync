@@ -5,4 +5,18 @@
     <string name="sign_in_button">Sign In</string>
 
     <string name="ping_drive_button">Ping Drive</string>
+
+    <string name="sync_drive_button">Sync Drive</string>
+
+    <plurals name="files_received_toast_message">
+        <item quantity="zero">No files received</item>
+        <item quantity="one">Received 1 file</item>
+        <item quantity="other">Received %1$d files</item>
+    </plurals>
+
+    <string name="missing_permissions_dialog_alert_title">Missing required permissions</string>
+    <string name="missing_permissions_dialog_alert_message">The application requires access to all files to offer its functionality. Are you sure you want to continue without the required permissions?</string>
+    <string name="missing_permissions_dialog_alert_positive">Continue without permissions</string>
+    <string name="missing_permissions_dialog_alert_positive_toast_message">Synchronizing files requires access to all files</string>
+    <string name="missing_permissions_dialog_alert_negative">Try again</string>
 </resources>

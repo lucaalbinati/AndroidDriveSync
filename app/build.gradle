@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.androiddrivesync"
-        minSdkVersion 29
+        minSdkVersion 30
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"

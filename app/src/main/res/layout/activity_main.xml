@@ -12,4 +12,12 @@
         android:onClick="pingDrive"
         android:text="@string/ping_drive_button" />
 
+    <Button
+        android:id="@+id/sync_drive_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="syncDrive"
+        android:text="@string/sync_drive_button" />
+
 </LinearLayout>

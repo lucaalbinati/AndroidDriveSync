@@ -7,6 +7,12 @@ import android.content.SharedPreferences
 import android.content.res.Resources
 import androidx.core.content.ContextCompat.startActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
+import com.google.android.gms.common.api.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.lang.Exception
@@ -49,10 +55,20 @@ class BootUpManager {
         }
 
         private fun googleSignIn(context: Context) {
-            if (GoogleSignIn.getLastSignedInAccount(context) == null) {
+            fun startSignIn() {
                 startActivity(context, Intent(context, SignInActivity::class.java), null)
+            }
+
+            if (GoogleSignIn.getLastSignedInAccount(context) == null) {
+                startSignIn()
             } else {
-                GoogleSignIn.getClient(context, SignInActivity.getGoogleSignInOptions(context, getClientId(context))).silentSignIn()
+                GoogleSignIn.getClient(context, SignInActivity.getGoogleSignInOptions(context, getClientId(context)))
+                    .silentSignIn()
+                    .addOnCompleteListener {
+                    if ((it.exception is ApiException) && ((it.exception as ApiException).statusCode == GoogleSignInStatusCodes.SIGN_IN_REQUIRED)) {
+                        startSignIn()
+                    }
+                }
             }
         }
 
