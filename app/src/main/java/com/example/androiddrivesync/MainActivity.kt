@@ -79,6 +79,7 @@ class MainActivity: AppCompatActivity() {
 
         if (requestCode == MANAGE_ALL_FILES_PERMISSION_REQUEST_CODE) {
             if (!Environment.isExternalStorageManager()) {
+                // The user did not enable the permission. We give him the possibility to try again
                 showAlertDialogForRefusedPermission()
             } else {
                 doSyncDrive()

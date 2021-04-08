@@ -19,4 +19,6 @@
     <string name="missing_permissions_dialog_alert_positive">Continue without permissions</string>
     <string name="missing_permissions_dialog_alert_positive_toast_message">Synchronizing files requires access to all files</string>
     <string name="missing_permissions_dialog_alert_negative">Try again</string>
+
+    <string name="mime_type_not_found_exception_message">MimeType not found for extension \'%1$s\', from filename \'%2$s\'</string>
 </resources>
