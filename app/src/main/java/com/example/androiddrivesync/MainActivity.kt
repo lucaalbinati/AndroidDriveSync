@@ -70,7 +70,9 @@ class MainActivity: AppCompatActivity() {
     private fun doSyncDrive() {
         // Synchronise
         scope.launch {
+            Toast.makeText(this@MainActivity, "Starting synchronization", Toast.LENGTH_SHORT).show()
             gdc.synchronise()
+            Toast.makeText(this@MainActivity, "Synchronization successful!", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -1,0 +1,151 @@
+package com.example.androiddrivesync
+
+import android.content.Context
+import com.google.api.client.http.FileContent
+import com.google.api.client.util.DateTime
+import com.google.api.services.drive.Drive
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileNotFoundException
+import java.lang.Exception
+
+class GoogleDriveUtility {
+    companion object {
+        private const val DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
+        private const val UNKNOWN_FILE_MIME_TYPE = "application/octet-stream"
+
+        private fun getFileFieldsDefaultSet(): HashSet<String> {
+            return HashSet(setOf("id", "name"))
+        }
+
+        suspend fun getOrCreateDriveFolder(service: Drive, driveFolderFilepath: String): String {
+            return try {
+                getDriveFileId(service, driveFolderFilepath, true)
+            } catch (e: FileNotFoundException) {
+                createDriveFolder(service, driveFolderFilepath)
+            }
+        }
+
+        suspend fun getDriveFileId(service: Drive, driveFileFilepath: String, isDir: Boolean? = false): String {
+            return if (File(driveFileFilepath).parent == null) {
+                getDriveFileId(service, driveFileFilepath, driveParentFolderId = null, isDir = isDir)
+            } else {
+                val driveFolderParentId = getDriveFileId(service, File(driveFileFilepath).parent!!, true)
+                getDriveFileId(service, File(driveFileFilepath).name, driveFolderParentId, isDir)
+            }
+        }
+
+        suspend fun getDriveFileId(service: Drive, folderName: String, driveParentFolderId: String? = null, isDir: Boolean? = false): String {
+            var query = "name='${folderName}' and trashed=False"
+            if (driveParentFolderId != null) {
+                query = "$query and ('${driveParentFolderId}' in parents)"
+            }
+            if (isDir == true) {
+                query = "$query and mimeType='${DRIVE_FOLDER_MIME_TYPE}'"
+            }
+
+            val files = sendFilesDriveQuery(service, query, extraFileFields = setOf("parents"))
+
+            if (files.size == 0) {
+                throw FileNotFoundException("File '${folderName}' with parentFolderId='${driveParentFolderId}' not found")
+            } else if (files.size >= 2) {
+                throw FileNotFoundException("Expected 1 file '${folderName}' with parentFolderId='${driveParentFolderId}', but got ${files.size} instead")
+            }
+
+            return files[0]["id"] as String
+        }
+
+        private suspend fun createDriveFolder(service: Drive, folderName: String, driveParentFolderId: String? = null): String {
+            val folderMetadata = com.google.api.services.drive.model.File()
+                .setName(folderName)
+                .setMimeType(DRIVE_FOLDER_MIME_TYPE)
+
+            if (driveParentFolderId != null) {
+                folderMetadata.parents = listOf(driveParentFolderId)
+            }
+
+            val response = withContext(Dispatchers.IO) {
+                return@withContext service.files().create(folderMetadata).execute()
+            }
+
+            return response["id"] as String
+        }
+
+        suspend fun createDriveFile(context: Context, service: Drive, localRelativeFilepath: String, filename: String, driveParentFolderId: String) {
+            val fileMetadata = com.google.api.services.drive.model.File()
+                .setName(filename)
+                .setParents(listOf(driveParentFolderId))
+
+            val mimeType = try {
+                Utility.getTypeFromFilename(context, filename)
+            } catch (e: MimeTypeNotFoundException) {
+                UNKNOWN_FILE_MIME_TYPE
+            }
+
+            val fileContent = FileContent(mimeType, File(GoogleDriveClient.BASE_STORAGE_DIR, localRelativeFilepath))
+
+            withContext(Dispatchers.IO) {
+                service.files().create(fileMetadata, fileContent).execute()
+            }
+        }
+
+        suspend fun deleteDriveFile(service: Drive, filename: String, parentFolderId: String) {
+            val fileId = getDriveFileId(service, filename, parentFolderId)
+            return deleteDriveFile(service, fileId)
+        }
+
+        private suspend fun deleteDriveFile(service: Drive, fileId: String) {
+            withContext(Dispatchers.IO) {
+                service.files().delete(fileId).execute()
+            }
+        }
+
+        suspend fun checkDriveFileStatus(service: Drive, localRelativeFilepath: String, filename: String, driveParentFolderId: String): GoogleDriveClient.Companion.DriveFileStatus {
+            val query = "name='${filename}' and ('${driveParentFolderId}' in parents) and trashed=False"
+            val files = sendFilesDriveQuery(service, query, extraFileFields = setOf("modifiedTime"))
+
+            if (files.size >= 2) {
+                throw Exception("There are ${files.size} files with the same name (expected 1 or 0)")
+            }
+
+            if (files.size == 0) {
+                return GoogleDriveClient.Companion.DriveFileStatus.NOT_PRESENT
+            }
+
+            val driveModifiedDate = (files[0]["modifiedTime"] as DateTime).value
+            val localModifiedDate = File(GoogleDriveClient.BASE_STORAGE_DIR, localRelativeFilepath).lastModified()
+
+            return if (driveModifiedDate < localModifiedDate) {
+                GoogleDriveClient.Companion.DriveFileStatus.PRESENT_OUTDATED
+            } else {
+                GoogleDriveClient.Companion.DriveFileStatus.PRESENT
+            }
+        }
+
+        suspend fun getDriveFilesNotPresentLocally(service: Drive, driveFolderId: String, localFiles: Array<File>): ArrayList<com.google.api.services.drive.model.File> {
+            val query = "'${driveFolderId}' in parents and trashed=False"
+            val driveFiles = sendFilesDriveQuery(service, query)
+
+            val localFilesNames = localFiles.map { f -> f.name }
+            return driveFiles.filter { df -> !localFilesNames.contains(df["name"]) } as ArrayList<com.google.api.services.drive.model.File>
+        }
+
+        suspend fun sendFilesDriveQuery(service: Drive, query: String, extraFileFields: Set<String> = setOf()): ArrayList<com.google.api.services.drive.model.File> {
+            val fileFieldsSet = getFileFieldsDefaultSet()
+            fileFieldsSet.addAll(extraFileFields)
+            val fields = "nextPageToken, files(${(fileFieldsSet as Set<String>).joinToString(", ")})"
+
+            val response = withContext(Dispatchers.IO) {
+                return@withContext service.files().list()
+                    .setQ(query)
+                    .setSpaces("drive")
+                    .setPageSize(10)
+                    .setFields(fields)
+                    .execute()
+            }
+
+            return response["files"] as ArrayList<com.google.api.services.drive.model.File>
+        }
+    }
+}
