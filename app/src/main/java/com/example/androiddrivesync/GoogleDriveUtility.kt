@@ -8,10 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
-import java.lang.Exception
 
 class GoogleDriveUtility {
     companion object {
+        const val DRIVE_BACKUP_FOLDER = "Google Pixel 2 XL Backup"
+
         private const val DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
         private const val UNKNOWN_FILE_MIME_TYPE = "application/octet-stream"
 
@@ -131,7 +132,7 @@ class GoogleDriveUtility {
             return driveFiles.filter { df -> !localFilesNames.contains(df["name"]) } as ArrayList<com.google.api.services.drive.model.File>
         }
 
-        suspend fun sendFilesDriveQuery(service: Drive, query: String, extraFileFields: Set<String> = setOf()): ArrayList<com.google.api.services.drive.model.File> {
+        private suspend fun sendFilesDriveQuery(service: Drive, query: String, extraFileFields: Set<String> = setOf()): ArrayList<com.google.api.services.drive.model.File> {
             val fileFieldsSet = getFileFieldsDefaultSet()
             fileFieldsSet.addAll(extraFileFields)
             val fields = "nextPageToken, files(${(fileFieldsSet as Set<String>).joinToString(", ")})"

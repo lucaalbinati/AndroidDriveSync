@@ -3,33 +3,26 @@ package com.example.androiddrivesync
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.checkDriveFileStatus
+import com.example.androiddrivesync.GoogleDriveUtility.Companion.createDriveFile
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.deleteDriveFile
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFileId
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.getOrCreateDriveFolder
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.sendFilesDriveQuery
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.createDriveFile
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
+import com.example.androiddrivesync.GoogleDriveUtility.Companion.getOrCreateDriveFolder
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
-import com.google.api.client.util.DateTime
 import com.google.api.services.drive.Drive
 import kotlinx.coroutines.*
 import java.io.File
-import java.lang.Exception
 import java.util.*
-import kotlin.collections.ArrayList
 
 class GoogleDriveClient(private val context: Context, private val authCode: String) {
     companion object {
         private const val DRIVE_SHARED_PREFERENCES = "drive"
-        private const val SYNC_FILES_SHARED_PREFERENCES = "syncFiles"
         private const val ACCESS_TOKEN_KEY_NAME = "accessToken"
         private const val EXPIRES_IN_SECONDS_KEY_NAME = "expiresInSeconds"
-
-        private const val DRIVE_BACKUP_FOLDER = "Google Pixel 2 XL Backup"
 
         enum class DriveFileStatus {
             NOT_PRESENT, PRESENT_OUTDATED, PRESENT
@@ -43,9 +36,9 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
     private val jacksonFactory = JacksonFactory.getDefaultInstance()
     private val service: Drive by lazy {
         suspend fun requestGoogleToken(): GoogleTokenResponse {
-            val pref = context.getSharedPreferences(BootUpManager.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
-            val clientId = pref.getString(BootUpManager.CLIENT_ID_KEY_NAME, null)
-            val clientSecret = pref.getString(BootUpManager.CLIENT_SECRET_KEY_NAME, null)
+            val pref = context.getSharedPreferences(CredentialsSharedPreferences.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
+            val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY_NAME, null)
+            val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
 
             return withContext(Dispatchers.IO) {
                 return@withContext GoogleAuthorizationCodeTokenRequest(httpTransport, jacksonFactory, clientId, clientSecret, authCode, "").execute()
@@ -74,14 +67,14 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             .build()
     }
 
-    suspend fun synchronise() {
+    suspend fun synchronise(filesToSynchronize: List<String>) {
         suspend fun synchronise(localRelativeFilepath: String) {
             val localFile = File(BASE_STORAGE_DIR, localRelativeFilepath)
             if (!localFile.exists()) {
                 throw Exception("Local file with relative path '${localRelativeFilepath}' was not found")
             }
 
-            val driveFile = File("$DRIVE_BACKUP_FOLDER/$localRelativeFilepath")
+            val driveFile = File("${GoogleDriveUtility.DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
 
             if (localFile.isFile) {
                 val filename = localFile.name
@@ -114,29 +107,9 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             }
         }
 
-        var syncFiles = getSyncFiles()
-        if (syncFiles.isEmpty()) {
-            syncFiles = setOf("Signal/")
-        }
-
-        for (localRelativeFilepath in syncFiles) {
+        for (localRelativeFilepath in filesToSynchronize) {
             synchronise(localRelativeFilepath)
         }
-    }
-
-    suspend fun listAllFiles(): Result<ArrayList<com.google.api.services.drive.model.File>> {
-        val files = try {
-            sendFilesDriveQuery(service, "trashed=False")
-        } catch (e: Exception) {
-            return Result.failure(e)
-        }
-
-        return Result.success(files)
-    }
-
-    private fun getSyncFiles(): Set<String> {
-        val pref = context.getSharedPreferences(SYNC_FILES_SHARED_PREFERENCES, MODE_PRIVATE)
-        return Collections.unmodifiableSet(pref.getStringSet("files", Collections.emptySet()))
     }
 
 }

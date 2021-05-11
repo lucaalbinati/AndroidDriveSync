@@ -12,7 +12,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidDriveSync">
-
         <activity
             android:name=".MainActivity"
             android:label="AndroidDriveSync">
@@ -22,11 +21,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".SignInActivity"
-            android:label="GoogleSignIn">
-        </activity>
+            android:label="GoogleSignIn"
+            android:parentActivityName=".MainActivity"/>
     </application>
 
 </manifest>
