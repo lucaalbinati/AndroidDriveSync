@@ -23,6 +23,10 @@ class SynchronizedFileHandler(context: Context, recyclerView: RecyclerView, priv
             throw NoSuchElementException()
         }
 
+        if (oldElement == newElement) {
+            return
+        }
+
         val idx = synchronizedFiles.indexOf(oldElement)
         synchronizedFiles[idx] = newElement
 
@@ -42,8 +46,34 @@ class SynchronizedFileHandler(context: Context, recyclerView: RecyclerView, priv
         removeElement(synchronizedFiles.indexOf(element))
     }
 
-    fun getAllElements(): ArrayList<SynchronizedFile> {
+    fun containsFilename(filename: String): Boolean {
+        return getAllNames().contains(filename)
+    }
+
+    fun getElementByName(filename: String): SynchronizedFile {
+        if (!containsFilename(filename)) {
+            throw NoSuchElementException()
+        }
+
+        val filteredFiles = synchronizedFiles.filter { sf -> sf.name == filename }
+
+        if (filteredFiles.size >= 2) {
+            throw Exception("Found ${filteredFiles.size} SynchronizedFiles with name '${filename}', instead of 1")
+        }
+
+        return filteredFiles[0]
+    }
+
+    fun getAllElements(): List<SynchronizedFile> {
         return synchronizedFiles
+    }
+
+    fun getAllNames(): List<String> {
+        return synchronizedFiles.map { f -> f.name }
+    }
+
+    fun getSize(): Int {
+        return synchronizedFiles.size
     }
 
 }

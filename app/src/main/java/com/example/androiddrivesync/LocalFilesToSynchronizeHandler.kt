@@ -9,23 +9,23 @@ class LocalFilesToSynchronizeHandler {
         private const val SYNC_FILES_SHARED_PREFERENCES = "syncFiles"
         private const val FILES_KEY = "files"
 
-        fun getLocalFilesToSynchronize(context: Context): ArrayList<String> {
+        fun getLocalFilesToSynchronize(context: Context): List<String> {
             // TODO change once we add functionality for the user to select the files to synchronize
             // return getRealLocalFilesToSynchronize(context)
             return getFakeLocalFilesToSynchronize()
         }
 
-        private fun getRealLocalFilesToSynchronize(context: Context): ArrayList<String> {
+        private fun getRealLocalFilesToSynchronize(context: Context): List<String> {
             val pref = context.getSharedPreferences(SYNC_FILES_SHARED_PREFERENCES, Context.MODE_PRIVATE)
             val set = pref.getStringSet(FILES_KEY, Collections.emptySet())
             return ArrayList(set)
         }
 
-        private fun getFakeLocalFilesToSynchronize(): ArrayList<String> {
+        private fun getFakeLocalFilesToSynchronize(): List<String> {
             return arrayListOf("Signal", "QTAudioEngine")
         }
 
-        fun save(context: Context, localFilesToSynchronize: ArrayList<String>) {
+        fun save(context: Context, localFilesToSynchronize: List<String>) {
             val pref = context.getSharedPreferences(SYNC_FILES_SHARED_PREFERENCES, Context.MODE_PRIVATE)
             val editor = pref.edit()
             editor.clear()

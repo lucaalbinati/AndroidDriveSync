@@ -13,4 +13,7 @@ class Utility {
                 ?: throw MimeTypeNotFoundException(context.getString(R.string.mime_type_not_found_exception_message, extension, filename))
         }
     }
+    enum class FileSyncStatus {
+        SYNCED, OUT_OF_SYNC, NOT_PRESENT, UNKNOWN
+    }
 }

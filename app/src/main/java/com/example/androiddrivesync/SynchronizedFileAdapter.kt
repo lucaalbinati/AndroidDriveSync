@@ -6,6 +6,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
+/**
+ * See https://guides.codepath.com/android/using-the-recyclerview#binding-the-adapter-to-the-recyclerview for RecyclerView tutorial
+ */
 class SynchronizedFileAdapter(private val mSynchronizedFiles: List<SynchronizedFile>): RecyclerView.Adapter<SynchronizedFileAdapter.ViewHolder>() {
 
     inner class ViewHolder(listItemView: View): RecyclerView.ViewHolder(listItemView) {
