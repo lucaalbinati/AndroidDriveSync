@@ -20,20 +20,23 @@ class GoogleDriveUtility {
             return HashSet(setOf("id", "name"))
         }
 
-        suspend fun getOrCreateDriveFolder(service: Drive, driveFolderFilepath: String): String {
-            return try {
-                getDriveFileId(service, driveFolderFilepath, true)
-            } catch (e: FileNotFoundException) {
-                createDriveFolder(service, driveFolderFilepath)
-            }
-        }
-
         suspend fun getDriveFileId(service: Drive, driveFileFilepath: String, isDir: Boolean? = false): String {
-            return if (File(driveFileFilepath).parent == null) {
-                getDriveFileId(service, driveFileFilepath, driveParentFolderId = null, isDir = isDir)
+            val parentDriveFile = File(driveFileFilepath).parentFile
+
+            return if (parentDriveFile == null) {
+                try {
+                    getDriveFileId(service, driveFileFilepath, driveParentFolderId = null, isDir = isDir)
+                } catch (e: FileNotFoundException) {
+                    createDriveFolder(service, driveFileFilepath)
+                }
             } else {
-                val driveFolderParentId = getDriveFileId(service, File(driveFileFilepath).parent!!, true)
-                getDriveFileId(service, File(driveFileFilepath).name, driveFolderParentId, isDir)
+                val driveFolderParentId = getDriveFileId(service, parentDriveFile.path, true)
+
+                try {
+                    getDriveFileId(service, File(driveFileFilepath).name, driveFolderParentId, isDir)
+                } catch (e: FileNotFoundException) {
+                    createDriveFolder(service, File(driveFileFilepath).name, driveFolderParentId)
+                }
             }
         }
 
@@ -96,7 +99,7 @@ class GoogleDriveUtility {
             return deleteDriveFile(service, fileId)
         }
 
-        private suspend fun deleteDriveFile(service: Drive, fileId: String) {
+        suspend fun deleteDriveFile(service: Drive, fileId: String) {
             withContext(Dispatchers.IO) {
                 service.files().delete(fileId).execute()
             }
@@ -124,7 +127,7 @@ class GoogleDriveUtility {
             }
         }
 
-        suspend fun getDriveFilesNotPresentLocally(service: Drive, driveFolderId: String, localFiles: Array<File>): ArrayList<com.google.api.services.drive.model.File> {
+        suspend fun getDriveFilesNotPresentLocally(service: Drive, driveFolderId: String, localFiles: List<File>): List<com.google.api.services.drive.model.File> {
             val query = "'${driveFolderId}' in parents and trashed=False"
             val driveFiles = sendFilesDriveQuery(service, query)
 

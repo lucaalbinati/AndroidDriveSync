@@ -2,12 +2,12 @@ package com.example.androiddrivesync
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import com.example.androiddrivesync.GoogleDriveUtility.Companion.DRIVE_BACKUP_FOLDER
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.checkDriveFileStatus
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.createDriveFile
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.deleteDriveFile
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFileId
 import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.getOrCreateDriveFolder
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
@@ -66,11 +66,19 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
 
     suspend fun synchronise(filesToSynchronize: List<String>, callback: (String, Utility.FileSyncStatus) -> Unit) {
         for (localRelativeFilepath in filesToSynchronize) {
-            synchronise(localRelativeFilepath)
+            try {
+                synchronise(localRelativeFilepath)
+                callback(localRelativeFilepath, Utility.FileSyncStatus.SYNCED)
+            } catch (e: Exception) {
+                throw Exception("Unknown exception occurred during synchronization", e)
+            }
+        }
 
-            // FIXME maybe replace by try-catch, and if no error then it's Utility.FileSyncStatus.SYNCED
-            val status = checkFileOrFolderDriveStatus(localRelativeFilepath)
-            callback(localRelativeFilepath, status)
+        // Delete files and folders present on the drive on the top level folder ('DRIVE_BACKUP_FOLDER') that aren't present locally
+        val topFolderId = getDriveFileId(service, DRIVE_BACKUP_FOLDER, isDir = true)
+        val topLevelDriveFilesNotPresentLocally = getDriveFilesNotPresentLocally(service, topFolderId, filesToSynchronize.map { f -> File(f) })
+        topLevelDriveFilesNotPresentLocally.forEach { f ->
+            deleteDriveFile(service, f["id"] as String)
         }
     }
 
@@ -80,11 +88,11 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             throw Exception("Local file with relative path '${localRelativeFilepath}' was not found")
         }
 
-        val driveFile = File("${GoogleDriveUtility.DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
+        val driveFile = File("${DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
 
         if (localFile.isFile) {
             val filename = localFile.name
-            val parentFolderId = getOrCreateDriveFolder(service, driveFile.parent!!)
+            val parentFolderId = getDriveFileId(service, driveFile.parent!!, isDir = true)
 
             when (val fileStatus = checkDriveFileStatus(service, localRelativeFilepath, filename, parentFolderId)) {
                 Utility.FileSyncStatus.NOT_PRESENT -> {
@@ -99,13 +107,13 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             }
         } else {
             // Recursively synchronize child files and folders
-            val localFiles = localFile.listFiles()!!
+            val localFiles = localFile.listFiles()!!.toList()
             for (file in localFiles) {
                 val childLocalRelativePath = file.relativeTo(BASE_STORAGE_DIR).path
                 synchronise(childLocalRelativePath)
             }
 
-            // Delete files and folders present on the drive that aren't present locally anymore
+            // Delete files and folders present on the drive that aren't present locally
             val driveFolderId = getDriveFileId(service, driveFile.path, true)
             val driveFilesNotPresentLocally = getDriveFilesNotPresentLocally(service, driveFolderId, localFiles)
             for (file in driveFilesNotPresentLocally) {
@@ -129,8 +137,8 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
     private suspend fun checkFileOrFolderDriveStatus(localRelativeFilepath: String): Utility.FileSyncStatus {
         suspend fun checkFileDriveStatus(localRelativeFilepath: String): Utility.FileSyncStatus {
             val filename = File(BASE_STORAGE_DIR, localRelativeFilepath).name
-            val driveFile = File("${GoogleDriveUtility.DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
-            val parentFolderId = getOrCreateDriveFolder(service, driveFile.parent!!)
+            val driveFile = File("${DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
+            val parentFolderId = getDriveFileId(service, driveFile.parent!!, isDir = true)
             return checkDriveFileStatus(service, localRelativeFilepath, filename, parentFolderId)
         }
 
@@ -144,7 +152,7 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
         } else {
             val localFiles = localFile.listFiles()!!
             val localFilesStatus = localFiles.map { f -> checkFileOrFolderDriveStatus(f.relativeTo(BASE_STORAGE_DIR).path) }
-            print(localFilesStatus)
+            // FIXME if the folder has no files within, 'reduce' crashes (can't reduce an empty list)
             return localFilesStatus.reduce { a, b ->
                 if (a == Utility.FileSyncStatus.UNKNOWN || b == Utility.FileSyncStatus.UNKNOWN) {
                     return Utility.FileSyncStatus.UNKNOWN
