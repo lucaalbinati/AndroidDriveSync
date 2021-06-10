@@ -12,6 +12,7 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
@@ -25,9 +26,6 @@ import kotlin.collections.ArrayList
 
 class MainActivity: AppCompatActivity() {
     companion object {
-        private const val GOOGLE_SIGN_IN = 100
-        private const val REQUEST_ALL_FILES_PERMISSION = 101
-
         private const val SYNCHRONIZING_CHANNEL_ID = "SYNCHRONIZING_CHANNEL_ID"
     }
 
@@ -35,6 +33,17 @@ class MainActivity: AppCompatActivity() {
 
     private lateinit var googleDriveClient: GoogleDriveClient
     private lateinit var synchronizedFileHandler: SynchronizedFileHandler
+
+    private val signIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        initializeGoogleDriveClientAndPopulate()
+    }
+
+    private val requestAllFilesPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (!hasExternalFilesPermission()) {
+            // The user did not enable the permission. We give him the possibility to try again
+            showAlertDialogForRefusedPermission()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +57,7 @@ class MainActivity: AppCompatActivity() {
 
         // Try to silently sign in to Google
         SignInActivity.trySilentSignIn(this, ::initializeGoogleDriveClientAndPopulate) {
-            startActivityForResult(Intent(this, SignInActivity::class.java), GOOGLE_SIGN_IN)
+            showAlertDialogBeforeSignIn()
         }
     }
 
@@ -61,6 +70,9 @@ class MainActivity: AppCompatActivity() {
     }
 
     private fun initializeGoogleDriveClientAndPopulate() {
+        // Make sure we have the permissions
+        requestExternalFilesPermission()
+
         // Setup Google Drive Client
         googleDriveClient = getGoogleDriveClient()
 
@@ -183,28 +195,9 @@ class MainActivity: AppCompatActivity() {
         if (hasExternalFilesPermission()) {
             return
         }
-        startActivityForResult(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION), REQUEST_ALL_FILES_PERMISSION)
+
+        showAlertDialogBeforeAskingForPermission()
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == GOOGLE_SIGN_IN) {
-            if (hasExternalFilesPermission()) {
-                initializeGoogleDriveClientAndPopulate()
-            } else {
-                requestExternalFilesPermission()
-            }
-        } else if (requestCode == REQUEST_ALL_FILES_PERMISSION) {
-            if (hasExternalFilesPermission()) {
-                initializeGoogleDriveClientAndPopulate()
-            } else {
-                // The user did not enable the permission. We give him the possibility to try again
-                showAlertDialogForRefusedPermission()
-            }
-        }
-    }
-
     private fun createNotificationChannel() {
         // Create the NotificationChannel
         val name = getString(R.string.synchronization_channel_name)
@@ -215,6 +208,28 @@ class MainActivity: AppCompatActivity() {
         // Register the channel with the system
         val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun showAlertDialogBeforeSignIn() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.before_sign_in_dialog_alert_title)
+            .setMessage(R.string.before_sign_in_dialog_alert_message)
+            .setPositiveButton(R.string.before_sign_in_dialog_alert_positive) { _, _ ->
+                signIn.launch(Intent(this, SignInActivity::class.java))
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showAlertDialogBeforeAskingForPermission() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.before_asking_permission_dialog_alert_title)
+            .setMessage(R.string.before_asking_permission_dialog_alert_message)
+            .setPositiveButton(R.string.before_asking_permission_dialog_alert_positive) { _, _ ->
+                requestAllFilesPermission.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun showAlertDialogForRefusedPermission() {
@@ -229,7 +244,7 @@ class MainActivity: AppCompatActivity() {
                 ).show()
             }
             .setNegativeButton(R.string.missing_permissions_dialog_alert_negative) { _: DialogInterface, _: Int ->
-                requestExternalFilesPermission()
+                requestAllFilesPermission.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
             }
             .setCancelable(false)
             .show()

@@ -14,7 +14,7 @@
         android:theme="@style/Theme.AndroidDriveSync">
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_label">
+            android:label="@string/main_activity_label">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,7 +23,7 @@
         </activity>
         <activity
             android:name=".SignInActivity"
-            android:label="GoogleSignIn"
+            android:label="@string/google_sign_in_label"
             android:parentActivityName=".MainActivity"/>
     </application>
 

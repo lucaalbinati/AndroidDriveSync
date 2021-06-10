@@ -152,21 +152,25 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
         } else {
             val localFiles = localFile.listFiles()!!
             val localFilesStatus = localFiles.map { f -> checkFileOrFolderDriveStatus(f.relativeTo(BASE_STORAGE_DIR).path) }
-            // FIXME if the folder has no files within, 'reduce' crashes (can't reduce an empty list)
-            return localFilesStatus.reduce { a, b ->
-                if (a == Utility.FileSyncStatus.UNKNOWN || b == Utility.FileSyncStatus.UNKNOWN) {
-                    return Utility.FileSyncStatus.UNKNOWN
-                }
 
-                if (a == Utility.FileSyncStatus.OUT_OF_SYNC || b == Utility.FileSyncStatus.OUT_OF_SYNC) {
-                    return Utility.FileSyncStatus.OUT_OF_SYNC
-                }
+            return if (localFilesStatus.isEmpty()) {
+                Utility.FileSyncStatus.UNKNOWN
+            } else {
+                localFilesStatus.reduce { a, b ->
+                    if (a == Utility.FileSyncStatus.UNKNOWN || b == Utility.FileSyncStatus.UNKNOWN) {
+                        return Utility.FileSyncStatus.UNKNOWN
+                    }
 
-                if (a == Utility.FileSyncStatus.NOT_PRESENT || b == Utility.FileSyncStatus.NOT_PRESENT) {
-                    return Utility.FileSyncStatus.OUT_OF_SYNC
-                }
+                    if (a == Utility.FileSyncStatus.OUT_OF_SYNC || b == Utility.FileSyncStatus.OUT_OF_SYNC) {
+                        return Utility.FileSyncStatus.OUT_OF_SYNC
+                    }
 
-                return Utility.FileSyncStatus.SYNCED
+                    if (a == Utility.FileSyncStatus.NOT_PRESENT || b == Utility.FileSyncStatus.NOT_PRESENT) {
+                        return Utility.FileSyncStatus.OUT_OF_SYNC
+                    }
+
+                    return Utility.FileSyncStatus.SYNCED
+                }
             }
         }
     }

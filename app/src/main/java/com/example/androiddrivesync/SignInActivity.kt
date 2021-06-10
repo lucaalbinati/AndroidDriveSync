@@ -1,9 +1,9 @@
 package com.example.androiddrivesync
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.auth.api.signin.*
 import com.google.android.gms.common.Scopes
@@ -17,8 +17,6 @@ import java.util.*
 
 class SignInActivity: AppCompatActivity() {
     companion object {
-        private const val SIGN_IN = 100
-
         fun getGoogleSignInClient(context: Context): GoogleSignInClient {
             val googleSignInOptions = getGoogleSignInOptions(context)
             return GoogleSignIn.getClient(context, googleSignInOptions)
@@ -56,6 +54,12 @@ class SignInActivity: AppCompatActivity() {
         }
     }
 
+    private val googleSignIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { data ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(data.data)
+        verifySignIn(task)
+        finish()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_in)
@@ -68,17 +72,8 @@ class SignInActivity: AppCompatActivity() {
     private fun startGoogleSignInActivity() {
         val googleSignInClient = getGoogleSignInClient(this)
         val signInIntent = googleSignInClient.signInIntent
-        startActivityForResult(signInIntent, SIGN_IN)
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            verifySignIn(task)
-            finish()
-        }
+        googleSignIn.launch(signInIntent)
     }
 
     private fun verifySignIn(task: Task<GoogleSignInAccount>) {

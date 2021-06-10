@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">AndroidDriveSync</string>
 
-    <string name="app_label">Android Drive Sync</string>
+    <string name="main_activity_label">Android Drive Sync</string>
+    <string name="google_sign_in_label">Google Sign In</string>
 
     <string name="synchronization_channel_name">Synchronization</string>
     <string name="synchronization_channel_description">Synchronize local files to your Google Drive</string>
@@ -15,6 +16,14 @@
 
     <string name="sync_drive_content_description">Synchronize</string>
     <string name="refresh_status_content_description">Refresh status</string>
+
+    <string name="before_sign_in_dialog_alert_title">Sign In</string>
+    <string name="before_sign_in_dialog_alert_message">Sign in to your Google account.</string>
+    <string name="before_sign_in_dialog_alert_positive">OK</string>
+
+    <string name="before_asking_permission_dialog_alert_title">Required Permission</string>
+    <string name="before_asking_permission_dialog_alert_message">The application requires access to all files to offer its functionality.</string>
+    <string name="before_asking_permission_dialog_alert_positive">OK</string>
 
     <string name="missing_permissions_dialog_alert_title">Missing required permissions</string>
     <string name="missing_permissions_dialog_alert_message">The application requires access to all files to offer its functionality. Are you sure you want to continue without the required permissions?</string>
