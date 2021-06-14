@@ -55,9 +55,14 @@ class SignInActivity: AppCompatActivity() {
     }
 
     private val googleSignIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { data ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(data.data)
-        verifySignIn(task)
-        finish()
+        when (data.resultCode) {
+            RESULT_OK -> {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data.data)
+                verifySignIn(task)
+                finish()
+            }
+            else -> {}
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

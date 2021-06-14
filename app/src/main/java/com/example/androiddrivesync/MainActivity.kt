@@ -34,10 +34,6 @@ class MainActivity: AppCompatActivity() {
     private lateinit var googleDriveClient: GoogleDriveClient
     private lateinit var synchronizedFileHandler: SynchronizedFileHandler
 
-    private val signIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        initializeGoogleDriveClientAndPopulate()
-    }
-
     private val requestAllFilesPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (!hasExternalFilesPermission()) {
             // The user did not enable the permission. We give him the possibility to try again
@@ -54,11 +50,6 @@ class MainActivity: AppCompatActivity() {
 
         // Setup SharedPreferences file for Google credentials
         CredentialsSharedPreferences.setupCredentialsSharedPreferences(this@MainActivity)
-
-        // Try to silently sign in to Google
-        SignInActivity.trySilentSignIn(this, ::initializeGoogleDriveClientAndPopulate) {
-            signIn.launch(Intent(this, SignInActivity::class.java))
-        }
     }
 
     override fun onPause() {
