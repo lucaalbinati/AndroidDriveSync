@@ -57,7 +57,7 @@ class MainActivity: AppCompatActivity() {
 
         // Try to silently sign in to Google
         SignInActivity.trySilentSignIn(this, ::initializeGoogleDriveClientAndPopulate) {
-            showAlertDialogBeforeSignIn()
+            signIn.launch(Intent(this, SignInActivity::class.java))
         }
     }
 
@@ -208,17 +208,6 @@ class MainActivity: AppCompatActivity() {
         // Register the channel with the system
         val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun showAlertDialogBeforeSignIn() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.before_sign_in_dialog_alert_title)
-            .setMessage(R.string.before_sign_in_dialog_alert_message)
-            .setPositiveButton(R.string.before_sign_in_dialog_alert_positive) { _, _ ->
-                signIn.launch(Intent(this, SignInActivity::class.java))
-            }
-            .setCancelable(false)
-            .show()
     }
 
     private fun showAlertDialogBeforeAskingForPermission() {

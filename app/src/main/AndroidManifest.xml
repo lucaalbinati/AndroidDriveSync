@@ -24,7 +24,8 @@
         <activity
             android:name=".SignInActivity"
             android:label="@string/google_sign_in_label"
-            android:parentActivityName=".MainActivity"/>
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.SignIn"/>
     </application>
 
 </manifest>

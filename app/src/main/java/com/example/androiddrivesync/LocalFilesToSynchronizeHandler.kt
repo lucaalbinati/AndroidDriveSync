@@ -12,6 +12,12 @@ class LocalFilesToSynchronizeHandler {
         fun getLocalFilesToSynchronize(context: Context): List<String> {
             val pref = context.getSharedPreferences(SYNC_FILES_SHARED_PREFERENCES, Context.MODE_PRIVATE)
             val set = pref.getStringSet(FILES_KEY, Collections.emptySet())
+
+            // TODO remove once we have functionality to add and remove entries
+            if (set != null && set.isEmpty()) {
+                return listOf("Signal", "QTAudioEngine")
+            }
+
             return ArrayList(set)
         }
 
