@@ -59,6 +59,7 @@ class SignInActivity: AppCompatActivity() {
             RESULT_OK -> {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(data.data)
                 verifySignIn(task)
+                setResult(RESULT_OK)
                 finish()
             }
             else -> {}

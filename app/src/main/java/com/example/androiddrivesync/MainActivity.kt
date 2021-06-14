@@ -3,17 +3,11 @@ package com.example.androiddrivesync
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -33,13 +27,6 @@ class MainActivity: AppCompatActivity() {
 
     private lateinit var googleDriveClient: GoogleDriveClient
     private lateinit var synchronizedFileHandler: SynchronizedFileHandler
-
-    private val requestAllFilesPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (!hasExternalFilesPermission()) {
-            // The user did not enable the permission. We give him the possibility to try again
-            showAlertDialogForRefusedPermission()
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,9 +51,6 @@ class MainActivity: AppCompatActivity() {
     }
 
     private fun initializeGoogleDriveClientAndPopulate() {
-        // Make sure we have the permissions
-        requestExternalFilesPermission()
-
         // Setup Google Drive Client
         googleDriveClient = getGoogleDriveClient()
 
@@ -181,17 +165,6 @@ class MainActivity: AppCompatActivity() {
         }
     }
 
-    private fun hasExternalFilesPermission(): Boolean {
-        return Environment.isExternalStorageManager()
-    }
-
-    private fun requestExternalFilesPermission() {
-        if (hasExternalFilesPermission()) {
-            return
-        }
-
-        showAlertDialogBeforeAskingForPermission()
-    }
     private fun createNotificationChannel() {
         // Create the NotificationChannel
         val name = getString(R.string.synchronization_channel_name)
@@ -202,35 +175,6 @@ class MainActivity: AppCompatActivity() {
         // Register the channel with the system
         val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun showAlertDialogBeforeAskingForPermission() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.before_asking_permission_dialog_alert_title)
-            .setMessage(R.string.before_asking_permission_dialog_alert_message)
-            .setPositiveButton(R.string.before_asking_permission_dialog_alert_positive) { _, _ ->
-                requestAllFilesPermission.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-            }
-            .setCancelable(false)
-            .show()
-    }
-
-    private fun showAlertDialogForRefusedPermission() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.missing_permissions_dialog_alert_title)
-            .setMessage(R.string.missing_permissions_dialog_alert_message)
-            .setPositiveButton(R.string.missing_permissions_dialog_alert_positive) { _: DialogInterface, _: Int ->
-                Toast.makeText(
-                    this,
-                    R.string.missing_permissions_dialog_alert_positive_toast_message,
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            .setNegativeButton(R.string.missing_permissions_dialog_alert_negative) { _: DialogInterface, _: Int ->
-                requestAllFilesPermission.launch(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
-            }
-            .setCancelable(false)
-            .show()
     }
 
 }

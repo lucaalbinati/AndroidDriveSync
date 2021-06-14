@@ -28,8 +28,11 @@
 
         <activity
             android:name=".SignInActivity"
-            android:label="@string/google_sign_in_label"
-            android:theme="@style/Theme.SignIn"/>
+            android:theme="@style/Theme.SignInAndFilesPermission"/>
+
+        <activity
+            android:name=".FilesPermissionActivity"
+            android:theme="@style/Theme.SignInAndFilesPermission"/>
 
     </application>
 

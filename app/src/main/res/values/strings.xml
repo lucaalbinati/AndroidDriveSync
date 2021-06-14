@@ -2,7 +2,6 @@
     <string name="app_name">AndroidDriveSync</string>
 
     <string name="main_activity_label">Android Drive Sync</string>
-    <string name="google_sign_in_label">Google Sign In</string>
 
     <string name="synchronization_channel_name">Synchronization</string>
     <string name="synchronization_channel_description">Synchronize local files to your Google Drive</string>
@@ -14,22 +13,16 @@
     <string name="sign_in_text">Please sign in to your Google account</string>
     <string name="sign_in_button">Sign In</string>
 
+    <string name="files_permission_text">Please enable file permissions</string>
+    <string name="files_permission_button">Go To Settings</string>
+
     <string name="sync_drive_content_description">Synchronize</string>
     <string name="refresh_status_content_description">Refresh status</string>
 
-    <string name="before_sign_in_dialog_alert_title">Sign In</string>
-    <string name="before_sign_in_dialog_alert_message">Sign in to your Google account.</string>
-    <string name="before_sign_in_dialog_alert_positive">OK</string>
-
-    <string name="before_asking_permission_dialog_alert_title">Required Permission</string>
-    <string name="before_asking_permission_dialog_alert_message">The application requires access to all files to offer its functionality.</string>
-    <string name="before_asking_permission_dialog_alert_positive">OK</string>
-
     <string name="missing_permissions_dialog_alert_title">Missing required permissions</string>
-    <string name="missing_permissions_dialog_alert_message">The application requires access to all files to offer its functionality. Are you sure you want to continue without the required permissions?</string>
-    <string name="missing_permissions_dialog_alert_positive">Continue without permissions</string>
+    <string name="missing_permissions_dialog_alert_message">The application requires access to all files to offer its functionality.</string>
     <string name="missing_permissions_dialog_alert_positive_toast_message">Synchronizing files requires access to all files</string>
-    <string name="missing_permissions_dialog_alert_negative">Try again</string>
+    <string name="missing_permissions_dialog_alert_negative">OK</string>
 
     <string name="mime_type_not_found_exception_message">MimeType not found for extension \'%1$s\', from filename \'%2$s\'</string>
 </resources>

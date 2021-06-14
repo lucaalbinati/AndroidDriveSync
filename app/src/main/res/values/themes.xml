@@ -20,7 +20,7 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.SignIn" parent="Theme.AndroidDriveSync">
+    <style name="Theme.SignInAndFilesPermission" parent="Theme.AndroidDriveSync">
         <item name="backgroundColor">?colorPrimary</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>

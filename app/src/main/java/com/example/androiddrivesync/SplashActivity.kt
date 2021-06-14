@@ -9,6 +9,13 @@ class SplashActivity: AppCompatActivity() {
 
     private val signIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         when (it.resultCode) {
+            RESULT_OK -> startFilesPermissionActivityIfNeeded()
+            else -> finish()
+        }
+    }
+
+    private val filesPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        when (it.resultCode) {
             RESULT_OK -> startMainActivity()
             else -> {}
         }
@@ -21,8 +28,7 @@ class SplashActivity: AppCompatActivity() {
 
         SignInActivity.trySilentSignIn(this,
             {
-                startMainActivity()
-                finish()
+                startFilesPermissionActivityIfNeeded()
             }, {
                 startSignInActivity()
             })
@@ -34,5 +40,14 @@ class SplashActivity: AppCompatActivity() {
 
     private fun startSignInActivity() {
         signIn.launch(Intent(this, SignInActivity::class.java))
+    }
+
+    private fun startFilesPermissionActivityIfNeeded() {
+        if (!FilesPermissionActivity.hasExternalFilesPermission()) {
+            filesPermission.launch(Intent(this, FilesPermissionActivity::class.java))
+        } else {
+            startMainActivity()
+            finish()
+        }
     }
 }
