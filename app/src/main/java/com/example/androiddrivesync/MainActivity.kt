@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -92,6 +91,9 @@ class MainActivity: AppCompatActivity() {
     }
 
     fun syncDrive(v: View) {
+        // Disable button during synchronization
+        v.setOnClickListener { null }
+
         val builder = createSynchronizationNotificationBuilder()
 
         scope.launch {
@@ -134,27 +136,33 @@ class MainActivity: AppCompatActivity() {
                     updateNotificationProgress(notificationId, builder, progressMax, progressCurrent, text)
                 }
 
-                // Show toast
-                Toast.makeText(this@MainActivity, "Synchronization successful!", Toast.LENGTH_SHORT).show()
-
                 // Stop animation
                 v.clearAnimation()
 
                 // Clear notification
                 cancel(notificationId)
+
+                // Enable button again
+                v.setOnClickListener(::syncDrive)
             }
         }
     }
 
     fun refreshStatus(v: View) {
         scope.launch {
-            //this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.INVISIBLE
+            // Disable button during refresh
+            v.setOnClickListener { null }
+
+            this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.INVISIBLE
             this@MainActivity.findViewById<ProgressBar>(R.id.refresh_progressBar).visibility = View.VISIBLE
 
             googleDriveClient.checkDriveStatus(synchronizedFileHandler.getAllNames(), updateSyncStatusUI)
 
             this@MainActivity.findViewById<ProgressBar>(R.id.refresh_progressBar).visibility = View.INVISIBLE
-            //this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.VISIBLE
+            this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.VISIBLE
+
+            // Enable button again
+            v.setOnClickListener(::refreshStatus)
         }
     }
 
