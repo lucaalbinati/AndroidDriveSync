@@ -65,6 +65,11 @@ class SignInActivity: AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        // prevents from going back to the splash screen
+        moveTaskToBack(true)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_in)

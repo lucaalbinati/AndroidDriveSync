@@ -8,7 +8,12 @@ import androidx.appcompat.app.AppCompatActivity
 class SplashActivity: AppCompatActivity() {
 
     private val signIn = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        startMainActivity()
+        when (it.resultCode) {
+            RESULT_OK -> startMainActivity()
+            else -> {}
+        }
+
+        finish()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,12 +24,15 @@ class SplashActivity: AppCompatActivity() {
                 startMainActivity()
                 finish()
             }, {
-                signIn.launch(Intent(this, SignInActivity::class.java))
-                finish()
+                startSignInActivity()
             })
     }
 
     private fun startMainActivity() {
         startActivity(Intent(this, MainActivity::class.java))
+    }
+
+    private fun startSignInActivity() {
+        signIn.launch(Intent(this, SignInActivity::class.java))
     }
 }

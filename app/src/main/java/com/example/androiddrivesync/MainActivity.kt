@@ -50,6 +50,9 @@ class MainActivity: AppCompatActivity() {
 
         // Setup SharedPreferences file for Google credentials
         CredentialsSharedPreferences.setupCredentialsSharedPreferences(this@MainActivity)
+
+        // Initialize and populate RecyclerView
+        initializeGoogleDriveClientAndPopulate()
     }
 
     override fun onPause() {
