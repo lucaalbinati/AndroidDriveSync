@@ -12,20 +12,26 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidDriveSync">
+
         <activity
-            android:name=".MainActivity"
-            android:label="@string/main_activity_label">
+            android:name=".SplashActivity"
+            android:theme="@style/Theme.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/main_activity_label"/>
+
         <activity
             android:name=".SignInActivity"
             android:label="@string/google_sign_in_label"
             android:parentActivityName=".MainActivity"
             android:theme="@style/Theme.SignIn"/>
+
     </application>
 
 </manifest>

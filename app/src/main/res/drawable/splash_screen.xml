@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape
+            android:shape="rectangle">
+            <gradient
+                android:angle="70"
+                android:startColor="?colorPrimary"
+                android:endColor="?colorPrimaryVariant"/>
+        </shape>
+    </item>
+    <item
+        android:height="220dp"
+        android:width="220dp"
+        android:gravity="center"
+        android:drawable="@drawable/refresh_icon"/>
+</layer-list>

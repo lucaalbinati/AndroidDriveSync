@@ -14,8 +14,14 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="Theme.Splash" parent="Theme.AndroidDriveSync">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <style name="Theme.SignIn" parent="Theme.AndroidDriveSync">
-        <item name="backgroundColor">#FFD180</item>
+        <item name="backgroundColor">?colorPrimary</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
