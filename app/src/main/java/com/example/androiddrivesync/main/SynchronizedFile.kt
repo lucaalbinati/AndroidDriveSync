@@ -1,4 +1,6 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.main
+
+import com.example.androiddrivesync.utility.Utility
 
 class SynchronizedFile(val name: String, val syncStatus: Utility.FileSyncStatus) {
 

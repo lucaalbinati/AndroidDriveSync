@@ -1,13 +1,16 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.drive
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.DRIVE_BACKUP_FOLDER
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.checkDriveFileStatus
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.createDriveFile
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.deleteDriveFile
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFileId
-import com.example.androiddrivesync.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
+import com.example.androiddrivesync.utility.CredentialsSharedPreferences
+import com.example.androiddrivesync.R
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.DRIVE_BACKUP_FOLDER
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.checkDriveFileStatus
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.createDriveFile
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.deleteDriveFile
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFileId
+import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
+import com.example.androiddrivesync.utility.Utility
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
@@ -151,7 +154,9 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             return checkFileDriveStatus(localRelativeFilepath)
         } else {
             val localFiles = localFile.listFiles()!!
-            val localFilesStatus = localFiles.map { f -> checkFileOrFolderDriveStatus(f.relativeTo(BASE_STORAGE_DIR).path) }
+            val localFilesStatus = localFiles.map { f -> checkFileOrFolderDriveStatus(f.relativeTo(
+                BASE_STORAGE_DIR
+            ).path) }
 
             return if (localFilesStatus.isEmpty()) {
                 Utility.FileSyncStatus.UNKNOWN

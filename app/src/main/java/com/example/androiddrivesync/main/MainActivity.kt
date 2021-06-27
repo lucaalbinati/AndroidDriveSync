@@ -1,4 +1,4 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.main
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,6 +11,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.example.androiddrivesync.*
+import com.example.androiddrivesync.drive.GoogleDriveClient
+import com.example.androiddrivesync.utility.CredentialsSharedPreferences
+import com.example.androiddrivesync.utility.LocalFilesToSynchronizeHandler
+import com.example.androiddrivesync.utility.Utility
 import com.google.android.gms.auth.api.signin.*
 import kotlinx.coroutines.*
 import java.util.*
@@ -71,7 +76,8 @@ class MainActivity: AppCompatActivity() {
 
     private fun setupSynchronizedFileHandler(): SynchronizedFileHandler {
         val recyclerView = findViewById<View>(R.id.rvSynchronizedFiles) as RecyclerView
-        val localFilesToSynchronize = LocalFilesToSynchronizeHandler.getLocalFilesToSynchronize(this)
+        val localFilesToSynchronize =
+            LocalFilesToSynchronizeHandler.getLocalFilesToSynchronize(this)
         val synchronizedFiles = ArrayList<SynchronizedFile>()
         for (localFile in localFilesToSynchronize) {
             synchronizedFiles.add(SynchronizedFile(localFile, Utility.FileSyncStatus.UNKNOWN))

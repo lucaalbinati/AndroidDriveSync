@@ -1,10 +1,11 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.main
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.androiddrivesync.R
 
 /**
  * See https://guides.codepath.com/android/using-the-recyclerview#binding-the-adapter-to-the-recyclerview for RecyclerView tutorial
@@ -23,7 +24,7 @@ class SynchronizedFileAdapter(private val mSynchronizedFiles: List<SynchronizedF
         return ViewHolder(synchronizedFilesView)
     }
 
-    override fun onBindViewHolder(holder: SynchronizedFileAdapter.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val synchronizedFile: SynchronizedFile = mSynchronizedFiles[position]
         val nameTextView = holder.nameTextView
         nameTextView.text = synchronizedFile.name

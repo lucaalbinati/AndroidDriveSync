@@ -1,6 +1,4 @@
-package com.example.androiddrivesync
-
-import java.lang.Exception
+package com.example.androiddrivesync.utility
 
 class MimeTypeNotFoundException(message: String): Exception(message) {
 }

@@ -1,4 +1,4 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.main
 
 import android.content.Context
 import androidx.recyclerview.widget.LinearLayoutManager

@@ -1,9 +1,10 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.boot
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.androiddrivesync.main.MainActivity
 
 class SplashActivity: AppCompatActivity() {
 

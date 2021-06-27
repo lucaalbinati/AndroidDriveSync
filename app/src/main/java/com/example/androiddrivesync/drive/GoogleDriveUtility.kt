@@ -1,6 +1,8 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.drive
 
 import android.content.Context
+import com.example.androiddrivesync.utility.MimeTypeNotFoundException
+import com.example.androiddrivesync.utility.Utility
 import com.google.api.client.http.FileContent
 import com.google.api.client.util.DateTime
 import com.google.api.services.drive.Drive
@@ -46,7 +48,7 @@ class GoogleDriveUtility {
                 query = "$query and ('${driveParentFolderId}' in parents)"
             }
             if (isDir == true) {
-                query = "$query and mimeType='${DRIVE_FOLDER_MIME_TYPE}'"
+                query = "$query and mimeType='$DRIVE_FOLDER_MIME_TYPE'"
             }
 
             val files = sendFilesDriveQuery(service, query, extraFileFields = setOf("parents"))

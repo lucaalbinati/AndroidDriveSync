@@ -1,7 +1,8 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.utility
 
 import android.content.Context
 import android.webkit.MimeTypeMap
+import com.example.androiddrivesync.R
 import java.io.File
 
 class Utility {

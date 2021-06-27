@@ -1,10 +1,12 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.boot
 
 import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.androiddrivesync.R
+import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.google.android.gms.auth.api.signin.*
 import com.google.android.gms.common.Scopes
 import com.google.android.gms.common.util.ScopeUtil

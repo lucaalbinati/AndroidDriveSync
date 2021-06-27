@@ -1,9 +1,10 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.utility
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.content.res.Resources
+import com.example.androiddrivesync.R
 import org.json.JSONObject
 import java.io.BufferedReader
 

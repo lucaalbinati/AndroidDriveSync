@@ -3,6 +3,8 @@ package com.example.androiddrivesync
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.androiddrivesync.utility.MimeTypeNotFoundException
+import com.example.androiddrivesync.utility.Utility
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test

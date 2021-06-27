@@ -14,7 +14,7 @@
         android:theme="@style/Theme.AndroidDriveSync">
 
         <activity
-            android:name=".SplashActivity"
+            android:name=".boot.SplashActivity"
             android:theme="@style/Theme.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,15 +23,15 @@
         </activity>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:label="@string/main_activity_label"/>
 
         <activity
-            android:name=".SignInActivity"
+            android:name=".boot.SignInActivity"
             android:theme="@style/Theme.SignInAndFilesPermission"/>
 
         <activity
-            android:name=".FilesPermissionActivity"
+            android:name=".boot.FilesPermissionActivity"
             android:theme="@style/Theme.SignInAndFilesPermission"/>
 
     </application>

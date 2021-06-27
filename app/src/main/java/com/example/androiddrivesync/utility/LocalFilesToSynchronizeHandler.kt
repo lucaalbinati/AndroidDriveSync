@@ -1,4 +1,4 @@
-package com.example.androiddrivesync
+package com.example.androiddrivesync.utility
 
 import android.content.Context
 import java.util.*
