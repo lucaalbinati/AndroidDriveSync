@@ -17,7 +17,10 @@ import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.example.androiddrivesync.utility.LocalFilesToSynchronizeHandler
 import com.example.androiddrivesync.utility.Utility
 import com.google.android.gms.auth.api.signin.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
+import java.io.File
+import java.lang.Integer.max
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -76,8 +79,7 @@ class MainActivity: AppCompatActivity() {
 
     private fun setupSynchronizedFileHandler(): SynchronizedFileHandler {
         val recyclerView = findViewById<View>(R.id.rvSynchronizedFiles) as RecyclerView
-        val localFilesToSynchronize =
-            LocalFilesToSynchronizeHandler.getLocalFilesToSynchronize(this)
+        val localFilesToSynchronize = LocalFilesToSynchronizeHandler.getLocalFilesToSynchronize(this)
         val synchronizedFiles = ArrayList<SynchronizedFile>()
         for (localFile in localFilesToSynchronize) {
             synchronizedFiles.add(SynchronizedFile(localFile, Utility.FileSyncStatus.UNKNOWN))
@@ -86,97 +88,128 @@ class MainActivity: AppCompatActivity() {
         return SynchronizedFileHandler(this, recyclerView, synchronizedFiles)
     }
 
-    private fun createSynchronizationNotificationBuilder(): NotificationCompat.Builder {
+    private fun createInitialSynchronizationNotificationBuilder(): NotificationCompat.Builder {
         return NotificationCompat.Builder(this, SYNCHRONIZING_CHANNEL_ID)
             .setSmallIcon(R.raw.synchronizing)
             .setContentTitle(getString(R.string.synchronization_synchronizing_title))
-            .setContentText(getString(R.string.synchronization_synchronizing_progress))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setProgress(0, 0, true)
+            .setColor(getColor(R.color.ic_launcher_background))
     }
 
     fun syncDrive(v: View) {
-        // Disable button during synchronization
-        v.setOnClickListener { null }
+        // Disable buttons
+        disableButtons()
 
-        val builder = createSynchronizationNotificationBuilder()
+        val builder = createInitialSynchronizationNotificationBuilder()
+        val notificationId = builder.hashCode()
 
         scope.launch {
-            val progressMultiplier = 20
-            val progressMax = synchronizedFileHandler.getSize() * progressMultiplier
-            val progressInitial = progressMax / progressMultiplier
-            var progressCurrent = progressMultiplier
-            val notificationId = builder.hashCode()
-
             NotificationManagerCompat.from(this@MainActivity).apply {
+                fun updateNotificationProgress(notificationId: Int, builder: NotificationCompat.Builder, sizeUnit: String, totalBytes: Int, currentBytes: Int) {
+                    val totalBytesInSizeUnit = Utility.convertToSizeUnit(totalBytes, sizeUnit)
+                    val currentBytesInSizeUnit = Utility.convertToSizeUnit(currentBytes, sizeUnit)
 
-                fun updateNotificationProgress(notificationId: Int, builder: NotificationCompat.Builder, progressMax: Int, progressCurrent: Int, text: String? = null) {
-                    if (text != null) {
-                        builder.setContentText(text)
-                    }
-                    builder.setProgress(progressMax, progressCurrent, false)
+                    builder.setContentText(getString(R.string.synchronization_synchronizing_uploading, currentBytesInSizeUnit, totalBytesInSizeUnit, sizeUnit))
+                    builder.setProgress(totalBytes, max(currentBytes, (0.05*totalBytes).toInt()), false)
                     notify(notificationId, builder.build())
                 }
 
                 // Issue initial notification
-                updateNotificationProgress(notificationId, builder, progressMax, progressInitial)
+                builder.setProgress(0, 0, true)
+                notify(notificationId, builder.build())
 
                 // Start animation
-                v.startAnimation(
-                    AnimationUtils.loadAnimation(
-                        this@MainActivity,
-                        R.anim.sync_fab_animation
-                    )
-                )
+                v.startAnimation(AnimationUtils.loadAnimation(this@MainActivity, R.anim.sync_fab_animation))
 
                 // Start job
                 val filesToSynchronize = synchronizedFileHandler.getAllNames()
-                googleDriveClient.synchronise(filesToSynchronize) { filename, status ->
-                    // Update sync status on RecyclerView element
-                    updateSyncStatusUI(filename, status)
+                val fileSyncActions = googleDriveClient.getFileSyncActions(filesToSynchronize)
+                val totalSize = googleDriveClient.getFilesToUploadSize(fileSyncActions).toInt()
+                val sizeUnit = Utility.getSizeUnit(totalSize)
+
+                var currentSize = 0
+                updateNotificationProgress(notificationId, builder, sizeUnit, totalSize, currentSize)
+
+                googleDriveClient.synchronise(fileSyncActions) { localRelativeFilepath, syncStatus ->
+                    // Update the sync status on the RecyclerView element
+                    updateSyncStatusUI(localRelativeFilepath, syncStatus)
 
                     // Update notification progress
-                    progressCurrent += progressMultiplier
-                    val text = if (progressCurrent == progressMax) getString(R.string.synchronization_synchronizing_complete) else null
-                    updateNotificationProgress(notificationId, builder, progressMax, progressCurrent, text)
+                    if (localRelativeFilepath != null) {
+                        currentSize += File(GoogleDriveClient.BASE_STORAGE_DIR, localRelativeFilepath).length().toInt()
+                        updateNotificationProgress(notificationId, builder, sizeUnit, totalSize, currentSize)
+                    }
                 }
+
+                // Update notification
+                updateNotificationProgress(notificationId, builder, sizeUnit, totalSize, totalSize)
 
                 // Stop animation
                 v.clearAnimation()
 
+                // Enable buttons
+                enableButtons()
+
                 // Clear notification
                 cancel(notificationId)
-
-                // Enable button again
-                v.setOnClickListener(::syncDrive)
             }
         }
     }
 
     fun refreshStatus(v: View) {
         scope.launch {
-            // Disable button during refresh
-            v.setOnClickListener { null }
+            // Disable buttons
+            disableButtons()
 
+            // Show progress bar and hide RecyclerView
             this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.INVISIBLE
             this@MainActivity.findViewById<ProgressBar>(R.id.refresh_progressBar).visibility = View.VISIBLE
 
+            // Check status
             googleDriveClient.checkDriveStatus(synchronizedFileHandler.getAllNames(), updateSyncStatusUI)
 
+            // Hide progress bar and show RecyclerView
             this@MainActivity.findViewById<ProgressBar>(R.id.refresh_progressBar).visibility = View.INVISIBLE
             this@MainActivity.findViewById<RecyclerView>(R.id.rvSynchronizedFiles).visibility = View.VISIBLE
 
-            // Enable button again
-            v.setOnClickListener(::refreshStatus)
+            // Enable buttons
+            enableButtons()
         }
     }
 
-    private val updateSyncStatusUI: (String, Utility.FileSyncStatus) -> Unit = { filename, status ->
-        val synchronizedFile = synchronizedFileHandler.getElementByName(filename)
-        if (status != synchronizedFile.syncStatus) {
-            synchronizedFileHandler.modifyElement(synchronizedFile, synchronizedFile.withNewSyncStatus(status))
+    private val updateSyncStatusUI: (String?, Utility.FileSyncStatus) -> Unit = { localRelativeFilepath, syncStatus ->
+        if (localRelativeFilepath != null) {
+            val synchronizedFile = getSynchronizedFileByFilepath(localRelativeFilepath)
+            if (syncStatus != synchronizedFile.syncStatus) {
+                synchronizedFileHandler.modifyElement(synchronizedFile, synchronizedFile.withNewSyncStatus(syncStatus))
+            }
         }
+    }
+
+    private fun getSynchronizedFileByFilepath(localRelativeFilepath: String): SynchronizedFile {
+        return try {
+            synchronizedFileHandler.getElementByName(localRelativeFilepath)
+        } catch (e: NoSuchElementException) {
+            val parentFile = File(localRelativeFilepath).parentFile
+            if (parentFile != null) {
+                getSynchronizedFileByFilepath(parentFile.path)
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private fun enableButtons() {
+        findViewById<FloatingActionButton>(R.id.sync_drive_fab).setOnClickListener(::syncDrive)
+        findViewById<FloatingActionButton>(R.id.refresh_status_fab).setOnClickListener(::refreshStatus)
+    }
+
+    private fun disableButtons() {
+        findViewById<FloatingActionButton>(R.id.sync_drive_fab).setOnClickListener(null)
+        findViewById<FloatingActionButton>(R.id.refresh_status_fab).setOnClickListener(null)
     }
 
     private fun createNotificationChannel() {

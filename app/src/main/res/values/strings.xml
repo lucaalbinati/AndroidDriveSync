@@ -7,8 +7,7 @@
     <string name="synchronization_channel_description">Synchronize local files to your Google Drive</string>
 
     <string name="synchronization_synchronizing_title">Synchronizing</string>
-    <string name="synchronization_synchronizing_progress">in progress…</string>
-    <string name="synchronization_synchronizing_complete">Complete</string>
+    <string name="synchronization_synchronizing_uploading">Uploading (%1$.1f/%2$.1f %3$s)</string>
 
     <string name="sign_in_text">Please sign in to your Google account</string>
     <string name="sign_in_button">Sign In</string>

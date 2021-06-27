@@ -2,7 +2,6 @@ package com.example.androiddrivesync.drive
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
-import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.DRIVE_BACKUP_FOLDER
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.checkDriveFileStatus
@@ -10,6 +9,7 @@ import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.createDri
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.deleteDriveFile
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFileId
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
+import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.example.androiddrivesync.utility.Utility
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
@@ -67,25 +67,52 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
             .build()
     }
 
-    suspend fun synchronise(filesToSynchronize: List<String>, callback: (String, Utility.FileSyncStatus) -> Unit) {
-        for (localRelativeFilepath in filesToSynchronize) {
+    suspend fun synchronise(filesSyncActions: List<Utility.FileSyncAction>, callback: (String?, Utility.FileSyncStatus) -> Unit) {
+        for (action in filesSyncActions) {
             try {
-                synchronise(localRelativeFilepath)
-                callback(localRelativeFilepath, Utility.FileSyncStatus.SYNCED)
+                when (action.syncStatus) {
+                    Utility.FileSyncStatus.NOT_PRESENT -> {
+                        createDriveFile(context, service, action.localRelativeFilepath!!, action.filename, action.parentFolderId!!)
+                        callback(action.localRelativeFilepath, Utility.FileSyncStatus.SYNCED)
+                    }
+                    Utility.FileSyncStatus.OUT_OF_SYNC -> {
+                        deleteDriveFile(service, action.filename, action.parentFolderId!!)
+                        createDriveFile(context, service, action.localRelativeFilepath!!, action.filename, action.parentFolderId)
+                        callback(action.localRelativeFilepath, Utility.FileSyncStatus.SYNCED)
+                    }
+                    Utility.FileSyncStatus.TO_BE_DELETED -> {
+                        deleteDriveFile(service, action.filename, action.parentFolderId!!)
+                    }
+                    Utility.FileSyncStatus.TO_BE_DELETED_FROM_BASE_DIR -> {
+                        deleteDriveFile(service, action.parentFolderId!!)
+                    }
+                    Utility.FileSyncStatus.SYNCED -> {}
+                    Utility.FileSyncStatus.UNKNOWN -> throw Exception("File '${action.filename}' has status '${action.syncStatus}'")
+                }
             } catch (e: Exception) {
                 throw Exception("Unknown exception occurred during synchronization", e)
             }
+        }
+    }
+
+    suspend fun getFileSyncActions(filesToSynchronize: List<String>): List<Utility.FileSyncAction> {
+        val fileSyncActions = ArrayList<Utility.FileSyncAction>()
+
+        for (localRelativeFilepath in filesToSynchronize) {
+            fileSyncActions.addAll(getFileSyncAction(localRelativeFilepath))
         }
 
         // Delete files and folders present on the drive on the top level folder ('DRIVE_BACKUP_FOLDER') that aren't present locally
         val topFolderId = getDriveFileId(service, DRIVE_BACKUP_FOLDER, isDir = true)
         val topLevelDriveFilesNotPresentLocally = getDriveFilesNotPresentLocally(service, topFolderId, filesToSynchronize.map { f -> File(f) })
         topLevelDriveFilesNotPresentLocally.forEach { f ->
-            deleteDriveFile(service, f["id"] as String)
+            fileSyncActions.add(Utility.FileSyncAction(Utility.FileSyncStatus.TO_BE_DELETED_FROM_BASE_DIR, f.name, f["id"] as String))
         }
+
+        return fileSyncActions
     }
 
-    private suspend fun synchronise(localRelativeFilepath: String) {
+    private suspend fun getFileSyncAction(localRelativeFilepath: String): List<Utility.FileSyncAction> {
         val localFile = File(BASE_STORAGE_DIR, localRelativeFilepath)
         if (!localFile.exists()) {
             throw Exception("Local file with relative path '${localRelativeFilepath}' was not found")
@@ -93,36 +120,42 @@ class GoogleDriveClient(private val context: Context, private val authCode: Stri
 
         val driveFile = File("${DRIVE_BACKUP_FOLDER}/$localRelativeFilepath")
 
+        val fileSyncActions = ArrayList<Utility.FileSyncAction>()
+
         if (localFile.isFile) {
             val filename = localFile.name
             val parentFolderId = getDriveFileId(service, driveFile.parent!!, isDir = true)
-
-            when (val fileStatus = checkDriveFileStatus(service, localRelativeFilepath, filename, parentFolderId)) {
-                Utility.FileSyncStatus.NOT_PRESENT -> {
-                    createDriveFile(context, service, localRelativeFilepath, filename, parentFolderId)
-                }
-                Utility.FileSyncStatus.OUT_OF_SYNC -> {
-                    deleteDriveFile(service, filename, parentFolderId)
-                    createDriveFile(context, service, localRelativeFilepath, filename, parentFolderId)
-                }
-                Utility.FileSyncStatus.SYNCED -> {}
-                Utility.FileSyncStatus.UNKNOWN -> throw Exception("File '$filename' has status '$fileStatus'")
-            }
+            val syncStatus = checkDriveFileStatus(service, localRelativeFilepath, filename, parentFolderId)
+            fileSyncActions.add(Utility.FileSyncAction(syncStatus, filename, localRelativeFilepath, parentFolderId))
         } else {
             // Recursively synchronize child files and folders
             val localFiles = localFile.listFiles()!!.toList()
             for (file in localFiles) {
                 val childLocalRelativePath = file.relativeTo(BASE_STORAGE_DIR).path
-                synchronise(childLocalRelativePath)
+                fileSyncActions.addAll(getFileSyncAction(childLocalRelativePath))
             }
 
             // Delete files and folders present on the drive that aren't present locally
             val driveFolderId = getDriveFileId(service, driveFile.path, true)
             val driveFilesNotPresentLocally = getDriveFilesNotPresentLocally(service, driveFolderId, localFiles)
             for (file in driveFilesNotPresentLocally) {
-                deleteDriveFile(service, file["name"] as String, driveFolderId)
+                fileSyncActions.add(Utility.FileSyncAction(Utility.FileSyncStatus.TO_BE_DELETED, file.name, driveFolderId))
             }
         }
+
+        return fileSyncActions
+    }
+
+    fun getFilesToUploadSize(fileSyncActions: List<Utility.FileSyncAction>): Long {
+        var totalLength: Long = 0
+
+        for (fileSyncAction in fileSyncActions) {
+            if (fileSyncAction.syncStatus == Utility.FileSyncStatus.OUT_OF_SYNC || fileSyncAction.syncStatus == Utility.FileSyncStatus.NOT_PRESENT) {
+                totalLength += File(BASE_STORAGE_DIR, fileSyncAction.localRelativeFilepath!!).length()
+            }
+        }
+
+        return totalLength
     }
 
     suspend fun checkDriveStatus(filesToSynchronize: List<String>, callback: (String, Utility.FileSyncStatus) -> Unit): Map<String, Utility.FileSyncStatus> {

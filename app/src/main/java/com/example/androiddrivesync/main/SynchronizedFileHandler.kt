@@ -46,13 +46,13 @@ class SynchronizedFileHandler(context: Context, recyclerView: RecyclerView, priv
         removeElement(synchronizedFiles.indexOf(element))
     }
 
-    fun containsFilename(filename: String): Boolean {
+    private fun containsFilename(filename: String): Boolean {
         return getAllNames().contains(filename)
     }
 
     fun getElementByName(filename: String): SynchronizedFile {
         if (!containsFilename(filename)) {
-            throw NoSuchElementException()
+            throw NoSuchElementException("$filename not found")
         }
 
         val filteredFiles = synchronizedFiles.filter { sf -> sf.name == filename }
