@@ -17,8 +17,6 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         const val File = "FILE"
         const val SyncStatus = "SYNC_STATUS"
 
-        //val SYNCHRONIZE_PERIODICITY = java.time.Duration.ofDays(1)
-
         fun enqueueWorkRequest(context: Context, filesToSynchronize: List<String>): UUID {
             val workRequest = OneTimeWorkRequestBuilder<SynchronizeWorker>()
                 .setInputData(workDataOf(

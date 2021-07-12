@@ -93,7 +93,6 @@ class MainActivity: AppCompatActivity() {
         }
 
         // Create and enqueue work request
-        //PeriodicWorkRequestBuilder<SynchronizeWorker>(SynchronizeWorker.SYNCHRONIZE_PERIODICITY)
         workRequestId = SynchronizeWorker.enqueueWorkRequest(this, synchronizedFileHandler.getAllNames())
 
         // Observe work request
