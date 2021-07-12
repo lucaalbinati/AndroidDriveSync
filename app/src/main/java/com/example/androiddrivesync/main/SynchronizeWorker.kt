@@ -1,6 +1,7 @@
 package com.example.androiddrivesync.main
 
 import android.content.Context
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -9,7 +10,9 @@ import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.utility.Utility
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import java.io.File
+import java.time.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): CoroutineWorker(appContext, workerParams) {
     companion object {
@@ -18,13 +21,28 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         const val SyncStatus = "SYNC_STATUS"
 
         fun enqueueWorkRequest(context: Context, filesToSynchronize: List<String>): UUID {
-            val workRequest = OneTimeWorkRequestBuilder<SynchronizeWorker>()
+            /*val workRequest = OneTimeWorkRequestBuilder<SynchronizeWorker>()
                 .setInputData(workDataOf(
                     FILES_TO_SYNCHRONIZE_KEY to filesToSynchronize.toTypedArray()
                 ))
+                .build()*/
+
+            /*val constraints = Constraints.Builder()
+                .setRequiresBatteryNotLow(true)
+                .build()*/
+
+            val workRequest = PeriodicWorkRequest.Builder(SynchronizeWorker::class.java, 15, TimeUnit.MINUTES)
+                .setInputData(workDataOf(
+                    FILES_TO_SYNCHRONIZE_KEY to filesToSynchronize.toTypedArray()
+                ))
+                .setInitialDelay(Duration.ZERO)
+                //.setConstraints(constraints)
                 .build()
 
-            WorkManager.getInstance(context).enqueue(workRequest)
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork("SynchronizeWorker", ExistingPeriodicWorkPolicy.REPLACE, workRequest)
+
+            Toast.makeText(context, "Scheduled periodic work", Toast.LENGTH_SHORT).show()
+
             return workRequest.id
         }
 
@@ -40,6 +58,8 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
     }
 
     override suspend fun doWork(): Result {
+        Toast.makeText(applicationContext, "Starting work", Toast.LENGTH_SHORT).show()
+
         if (!inputData.keyValueMap.containsKey(FILES_TO_SYNCHRONIZE_KEY)) {
             throw Exception("Key-value pair for '$FILES_TO_SYNCHRONIZE_KEY' not found")
         }
@@ -47,7 +67,6 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         val builder = SynchronizeNotification.getInitialBuilder(applicationContext)
         val notificationId = builder.hashCode()
         val notificationManagerCompat = NotificationManagerCompat.from(applicationContext)
-
 
         // Issue initial notification
         SynchronizeNotification.initialProgress(notificationManagerCompat, notificationId, builder)
@@ -71,6 +90,8 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
 
         // Clear notification
         SynchronizeNotification.cancel(notificationManagerCompat, notificationId)
+
+        SynchronizeNotification.createCompleteNotification(applicationContext, notificationManagerCompat)
 
         return Result.success()
     }

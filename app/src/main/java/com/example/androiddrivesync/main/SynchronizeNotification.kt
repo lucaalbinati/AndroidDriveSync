@@ -36,6 +36,19 @@ class SynchronizeNotification {
                 .setOngoing(true)
         }
 
+        fun createCompleteNotification(context: Context, notificationManagerCompat: NotificationManagerCompat) {
+            val notification = NotificationCompat.Builder(context, SYNCHRONIZING_CHANNEL_ID)
+                .setSmallIcon(R.raw.synchronizing)
+                .setContentTitle("Synchronization completed")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setColor(context.resources.getColor(R.color.ic_launcher_background, context.theme))
+                .build()
+
+            notificationManagerCompat.notify(notification.hashCode(), notification)
+        }
+
         fun initialProgress(notificationManagerCompat: NotificationManagerCompat, notificationId: Int, builder: NotificationCompat.Builder) {
             builder.setProgress(0, 0, true)
             notificationManagerCompat.notify(notificationId, builder.build())
