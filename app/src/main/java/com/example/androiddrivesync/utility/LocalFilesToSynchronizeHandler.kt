@@ -15,7 +15,8 @@ class LocalFilesToSynchronizeHandler {
 
             // TODO remove once we have functionality to add and remove entries
             if (set != null && set.isEmpty()) {
-                return listOf("Signal", "QTAudioEngine")
+                //return listOf("Signal", "QTAudioEngine", "swiss_simple.mbtiles", "MapsWithMe/210201")
+                return listOf("QTAudioEngine", "swiss_simple.mbtiles", "MapsWithMe/210201")
             }
 
             return ArrayList(set)
