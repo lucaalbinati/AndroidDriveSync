@@ -133,7 +133,17 @@ class GoogleDriveUtility {
             val query = "'${driveFolderId}' in parents and trashed=False"
             val driveFiles = sendFilesDriveQuery(service, query)
 
-            val localFilesNames = localFiles.map { f -> f.name }
+            val localFilesNames = localFiles.map { f ->
+                if (f.isFile) {
+                    f.name
+                } else {
+                    var curr = f
+                    while (curr.parentFile != null) {
+                        curr = curr.parentFile!!
+                    }
+                    curr.name
+                }
+            }
             return driveFiles.filter { df -> !localFilesNames.contains(df["name"]) } as ArrayList<com.google.api.services.drive.model.File>
         }
 
