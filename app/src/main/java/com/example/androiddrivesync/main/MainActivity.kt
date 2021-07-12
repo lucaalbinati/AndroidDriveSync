@@ -48,11 +48,6 @@ class MainActivity: AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // TODO
-    }
-
     private fun initializeGoogleDriveClientAndPopulate() {
         // Setup Google Drive Client
         googleDriveClient = getGoogleDriveClient()

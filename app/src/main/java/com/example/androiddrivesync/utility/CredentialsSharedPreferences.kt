@@ -42,6 +42,11 @@ class CredentialsSharedPreferences {
 
         fun getClientId(context: Context): String {
             val sharedPreferences = context.getSharedPreferences(CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
+
+            if (!sharedPreferences.contains(CLIENT_ID_KEY_NAME)) {
+                setupCredentialsSharedPreferences(context)
+            }
+
             return sharedPreferences.getString(CLIENT_ID_KEY_NAME, null)!!
         }
     }
