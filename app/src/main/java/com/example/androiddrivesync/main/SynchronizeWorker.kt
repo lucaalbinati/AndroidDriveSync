@@ -1,7 +1,7 @@
 package com.example.androiddrivesync.main
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.*
@@ -9,26 +9,29 @@ import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.utility.Utility
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import java.io.File
+import java.time.Duration
 import java.util.*
+import java.util.concurrent.ExecutionException
 
 class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): CoroutineWorker(appContext, workerParams) {
     companion object {
         const val FILES_TO_SYNCHRONIZE_KEY = "FILES_TO_SYNCHRONIZE_KEY"
         const val File = "FILE"
-        const val SyncStatus = "SYNC_STATUS"
+        const val SYNC_STATUS = "SYNC_STATUS"
+        const val UNIQUE_WORK_NAME = "synchronizeWork"
 
-        fun enqueueWorkRequest(context: Context, filesToSynchronize: List<String>): UUID {
-            val workRequest = OneTimeWorkRequestBuilder<SynchronizeWorker>()
+        fun setupPeriodicWorkRequest(context: Context, filesToSynchronize: List<String>): UUID {
+            val workRequest = PeriodicWorkRequestBuilder<SynchronizeWorker>(Duration.ofMinutes(15))
                 .setInputData(workDataOf(
                     FILES_TO_SYNCHRONIZE_KEY to filesToSynchronize.toTypedArray()
                 ))
                 .build()
 
-            WorkManager.getInstance(context).enqueue(workRequest)
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, workRequest)
             return workRequest.id
         }
 
-        fun observeWorkRequest(context: AppCompatActivity, workRequestId: UUID, onChange: (WorkInfo.State, Data) -> Unit) {
+        /*fun observeWorkRequest(context: AppCompatActivity, workRequestId: UUID, onChange: (WorkInfo.State, Data) -> Unit) {
             WorkManager.getInstance(context)
                 .getWorkInfoByIdLiveData(workRequestId)
                 .observe(context, { workInfo: WorkInfo? ->
@@ -36,11 +39,14 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
                         onChange(workInfo.state, workInfo.progress)
                     }
                 })
-        }
+        }*/
     }
 
     override suspend fun doWork(): Result {
+        Log.i("synchronizeWorker", "start doWork()")
+
         if (!inputData.keyValueMap.containsKey(FILES_TO_SYNCHRONIZE_KEY)) {
+            Log.i("synchronizeWorker", "missing '$FILES_TO_SYNCHRONIZE_KEY' in inputData")
             throw Exception("Key-value pair for '$FILES_TO_SYNCHRONIZE_KEY' not found")
         }
 
@@ -48,29 +54,35 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         val notificationId = builder.hashCode()
         val notificationManagerCompat = NotificationManagerCompat.from(applicationContext)
 
-
         // Issue initial notification
         SynchronizeNotification.initialProgress(notificationManagerCompat, notificationId, builder)
 
-        // Get the list of files to synchronize
-        val filesToSynchronize: List<String> = inputData.getStringArray(FILES_TO_SYNCHRONIZE_KEY)!!.toList()
+        try {
+            // Get the list of files to synchronize
+            val filesToSynchronize: List<String> =
+                inputData.getStringArray(FILES_TO_SYNCHRONIZE_KEY)!!.toList()
 
-        // Get a GoogleDriveClient instance
-        val googleDriveClient = getGoogleDriveClient()
+            // Get a GoogleDriveClient instance
+            val googleDriveClient = getGoogleDriveClient()
 
-        // Get the actions needed for each file, along with some upload size information
-        val fileSyncActions = googleDriveClient.getFileSyncActions(filesToSynchronize)
-        val totalSize = googleDriveClient.getFilesToUploadSize(fileSyncActions).toInt()
-        val sizeUnit = Utility.getSizeUnit(totalSize)
+            // Get the actions needed for each file, along with some upload size information
+            val fileSyncActions = googleDriveClient.getFileSyncActions(filesToSynchronize)
+            val totalSize = googleDriveClient.getFilesToUploadSize(fileSyncActions).toInt()
+            val sizeUnit = Utility.getSizeUnit(totalSize)
 
-        // Synchronize
-        doSynchronize(notificationManagerCompat, notificationId, builder, googleDriveClient, fileSyncActions, totalSize, sizeUnit)
+            // Synchronize
+            doSynchronize(notificationManagerCompat, notificationId, builder, googleDriveClient, fileSyncActions, totalSize, sizeUnit)
 
-        // Update notification
-        SynchronizeNotification.updateProgress(applicationContext, notificationManagerCompat, notificationId, builder, sizeUnit, totalSize, totalSize)
+            // Update notification
+            SynchronizeNotification.updateProgress(applicationContext, notificationManagerCompat, notificationId, builder, sizeUnit, totalSize, totalSize)
+        } catch (e: ExecutionException) {
+            Log.i("synchronizeWorker", "caught exception ${e.message}")
+        } finally {
+            // Clear notification
+            SynchronizeNotification.cancel(notificationManagerCompat, notificationId)
+        }
 
-        // Clear notification
-        SynchronizeNotification.cancel(notificationManagerCompat, notificationId)
+        Log.i("synchronizeWorker", "finish doWork()")
 
         return Result.success()
     }
@@ -91,7 +103,7 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         googleDriveClient.synchronise(fileSyncActions) { localRelativeFilepath, syncStatus ->
             if (localRelativeFilepath != null) {
                 // Update the sync status on the RecyclerView element
-                setProgressAsync(workDataOf(File to localRelativeFilepath, SyncStatus to syncStatus.name))
+                setProgressAsync(workDataOf(File to localRelativeFilepath, SYNC_STATUS to syncStatus.name))
 
                 // Update notification progress
                 currentSize += File(GoogleDriveClient.BASE_STORAGE_DIR, localRelativeFilepath).length().toInt()

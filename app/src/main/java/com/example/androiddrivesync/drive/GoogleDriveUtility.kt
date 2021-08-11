@@ -84,7 +84,7 @@ class GoogleDriveUtility {
                 .setParents(listOf(driveParentFolderId))
 
             val mimeType = try {
-                Utility.getTypeFromFilename(context, filename)
+                Utility.getTypeFromFilename(filename)
             } catch (e: MimeTypeNotFoundException) {
                 UNKNOWN_FILE_MIME_TYPE
             }

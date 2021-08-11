@@ -1,17 +1,15 @@
 package com.example.androiddrivesync.utility
 
-import android.content.Context
 import android.webkit.MimeTypeMap
-import com.example.androiddrivesync.R
 import java.io.File
 
 class Utility {
     companion object {
-        fun getTypeFromFilename(context: Context, filename: String): String {
+        fun getTypeFromFilename(filename: String): String {
             val extension = File(filename).extension
 
             return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-                ?: throw MimeTypeNotFoundException(context.getString(R.string.mime_type_not_found_exception_message, extension, filename))
+                ?: throw MimeTypeNotFoundException("MimeType not found for extension '$extension', from filename '$filename'")
         }
 
         fun getSizeUnit(size: Int): String {

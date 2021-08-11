@@ -1,8 +1,9 @@
 package com.example.androiddrivesync.main
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
-import android.view.animation.AnimationUtils
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
@@ -10,6 +11,7 @@ import androidx.work.*
 import com.example.androiddrivesync.*
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveClient
+import com.example.androiddrivesync.synchronizeservice.SynchronizeService
 import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.example.androiddrivesync.utility.LocalFilesToSynchronizeHandler
 import com.example.androiddrivesync.utility.Utility
@@ -38,6 +40,9 @@ class MainActivity: AppCompatActivity() {
 
         // Initialize and populate RecyclerView
         initializeGoogleDriveClientAndPopulate()
+
+        // Start the service, in case it wasn't running
+        startService(Intent(this, SynchronizeService::class.java))
     }
 
     override fun onPause() {
@@ -60,9 +65,23 @@ class MainActivity: AppCompatActivity() {
     }
 
     private fun getGoogleDriveClient(): GoogleDriveClient {
-        // Get Google account and server authentication code
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        val serverAuthCode = account!!.serverAuthCode!!
+        val pref = this.getSharedPreferences(GoogleDriveClient.DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
+        var serverAuthCode = pref.getString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME, null)
+
+        if (serverAuthCode == null) {
+            // TODO move some of this in SignInActivity
+            Log.i("MainActivity", "Did not find a ${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME} in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file")
+            val account = GoogleSignIn.getLastSignedInAccount(this)
+            serverAuthCode = account!!.serverAuthCode!!
+            Log.i("MainActivity", "Got new server authentication code $serverAuthCode")
+
+            val editor = pref.edit()
+            editor.putString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME, serverAuthCode)
+            editor.apply()
+            Log.i("MainActivity", "Saved new server authentication code $serverAuthCode")
+        } else {
+            Log.i("MainActivity", "Found a ${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME} in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file: $serverAuthCode")
+        }
 
         // Create GoogleDriveClient
         return GoogleDriveClient(this, serverAuthCode)
@@ -79,39 +98,9 @@ class MainActivity: AppCompatActivity() {
         return SynchronizedFileHandler(this, recyclerView, synchronizedFiles)
     }
 
-    private var workRequestId: UUID? = null
-
     fun syncDrive(v: View) {
-        // Check if a synchronization is already going on
-        if (workRequestId != null && !WorkManager.getInstance(this).getWorkInfoById(workRequestId!!).isDone) {
-            return
-        }
-
-        // Create and enqueue work request
-        workRequestId = SynchronizeWorker.enqueueWorkRequest(this, synchronizedFileHandler.getAllNames())
-
-        // Observe work request
-        SynchronizeWorker.observeWorkRequest(this, workRequestId!!) { workState, workProgress ->
-            when (workState) {
-                WorkInfo.State.ENQUEUED -> {
-                    // Start animation
-                    v.startAnimation(AnimationUtils.loadAnimation(this@MainActivity, R.anim.sync_fab_animation))
-                }
-                WorkInfo.State.RUNNING -> {
-                    val file = workProgress.getString(SynchronizeWorker.File)
-                    val syncStatusString = workProgress.getString(SynchronizeWorker.SyncStatus)
-                    if (file != null && syncStatusString != null) {
-                        val syncStatus = Utility.FileSyncStatus.valueOf(syncStatusString)
-                        updateSyncStatusUI(file, syncStatus)
-                    }
-                }
-                WorkInfo.State.SUCCEEDED, WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
-                    // Stop animation
-                    v.clearAnimation()
-                }
-                WorkInfo.State.BLOCKED -> {}
-            }
-        }
+        // FIXME: move somewhere else
+        stopService(Intent(this, SynchronizeService::class.java))
     }
 
     fun refreshStatus(v: View) {

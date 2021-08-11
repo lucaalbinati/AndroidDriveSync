@@ -2,6 +2,7 @@ package com.example.androiddrivesync.drive
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
+import android.util.Log
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.DRIVE_BACKUP_FOLDER
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.checkDriveFileStatus
@@ -11,9 +12,7 @@ import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveF
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
 import com.example.androiddrivesync.utility.CredentialsSharedPreferences
 import com.example.androiddrivesync.utility.Utility
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
+import com.google.api.client.googleapis.auth.oauth2.*
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.drive.Drive
@@ -22,47 +21,124 @@ import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
-class GoogleDriveClient(private val context: Context, private val authCode: String) {
+class GoogleDriveClient(private val context: Context, authCode: String) {
     companion object {
-        private const val DRIVE_SHARED_PREFERENCES = "drive"
+        private const val TAG = "GoogleDriveClient"
+
+        const val DRIVE_SHARED_PREFERENCES = "drive"
+        const val SERVER_AUTHENTICATION_CODE_KEY_NAME = "serverAuthenticationCode"
+        private const val ID_TOKEN_KEY_NAME = "idToken"
         private const val ACCESS_TOKEN_KEY_NAME = "accessToken"
-        private const val EXPIRES_IN_SECONDS_KEY_NAME = "expiresInSeconds"
+        private const val REFRESH_TOKEN_KEY_NAME = "refreshToken"
 
         private const val BASE_STORAGE_DIR_NAME = "storage/emulated/0/"
         val BASE_STORAGE_DIR = File(BASE_STORAGE_DIR_NAME)
     }
 
     private val httpTransport = NetHttpTransport()
-    private val jacksonFactory = JacksonFactory.getDefaultInstance()
-    private val service: Drive by lazy {
-        suspend fun requestGoogleToken(): GoogleTokenResponse {
+    private val jsonFactory = JacksonFactory.getDefaultInstance()
+    private val service: Drive = initService(authCode)
+
+    private fun initService(authorizationCode: String): Drive {
+        /*suspend fun requestAccessToken(): GoogleTokenResponse {
             val pref = context.getSharedPreferences(CredentialsSharedPreferences.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
             val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY_NAME, null)
             val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
 
             return withContext(Dispatchers.IO) {
-                return@withContext GoogleAuthorizationCodeTokenRequest(httpTransport, jacksonFactory, clientId, clientSecret, authCode, "").execute()
+                val tokenResponse = GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory, clientId, clientSecret, authorizationCode, "").execute()
+                Log.i(TAG, "received token response $tokenResponse")
+                Log.i(TAG, "received accessToken: ${tokenResponse.accessToken}")
+                Log.i(TAG, "received refreshToken: ${tokenResponse.refreshToken}")
+                if (tokenResponse.refreshToken == null) {
+                    throw Exception("Expected to receive a refreshToken but got none.")
+                }
+                val edit = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE).edit()
+                edit.putString(ID_TOKEN_KEY_NAME, tokenResponse.idToken)
+                edit.putString(ACCESS_TOKEN_KEY_NAME, tokenResponse.accessToken)
+                edit.putString(REFRESH_TOKEN_KEY_NAME, tokenResponse.refreshToken)
+                edit.apply()
+                Log.i(TAG, "saved $ID_TOKEN_KEY_NAME, $ACCESS_TOKEN_KEY_NAME and $REFRESH_TOKEN_KEY_NAME to '$DRIVE_SHARED_PREFERENCES' shared preferences file")
+                return@withContext tokenResponse
+            }
+        }*/
+
+        suspend fun requestAccessToken(refreshToken: String? = null): GoogleTokenResponse {
+            val pref = context.getSharedPreferences(CredentialsSharedPreferences.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
+            val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY_NAME, null)
+            val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
+
+            return withContext(Dispatchers.IO) {
+                val tokenResponse = if (refreshToken == null) {
+                    GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory, clientId, clientSecret, authorizationCode, "").execute()
+                } else {
+                    GoogleRefreshTokenRequest(httpTransport, jsonFactory, refreshToken, clientId, clientSecret).execute()
+                }
+                Log.i(TAG, "received token response $tokenResponse")
+                Log.i(TAG, "received accessToken: ${tokenResponse.accessToken}")
+                Log.i(TAG, "received refreshToken: ${tokenResponse.refreshToken}")
+                if (tokenResponse.refreshToken == null) {
+                    throw Exception("Expected to receive a refreshToken but got none.")
+                }
+                val edit = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE).edit()
+                edit.putString(ID_TOKEN_KEY_NAME, tokenResponse.idToken)
+                edit.putString(ACCESS_TOKEN_KEY_NAME, tokenResponse.accessToken)
+                edit.putString(REFRESH_TOKEN_KEY_NAME, tokenResponse.refreshToken)
+                edit.apply()
+                Log.i(TAG, "saved $ID_TOKEN_KEY_NAME, $ACCESS_TOKEN_KEY_NAME and $REFRESH_TOKEN_KEY_NAME to '$DRIVE_SHARED_PREFERENCES' shared preferences file")
+                return@withContext tokenResponse
             }
         }
 
-        val pref = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
-        val expiresInSeconds = pref.getLong(EXPIRES_IN_SECONDS_KEY_NAME, 0)
+        /*suspend fun refreshAccessToken(refreshToken: String): GoogleTokenResponse {
+            val pref = context.getSharedPreferences(CredentialsSharedPreferences.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
+            val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY_NAME, null)
+            val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
 
-        if (!pref.contains(ACCESS_TOKEN_KEY_NAME) || expiresInSeconds < Calendar.getInstance().time.time) {
-            val currTime = System.currentTimeMillis()
-            val requestToken = runBlocking {
-                return@runBlocking requestGoogleToken()
+            return withContext(Dispatchers.IO) {
+                val tokenResponse = GoogleRefreshTokenRequest(httpTransport, jsonFactory, refreshToken, clientId, clientSecret).execute()
+                Log.i(TAG, "received token response $tokenResponse")
+                Log.i(TAG, "received accessToken: ${tokenResponse.accessToken}")
+                Log.i(TAG, "received refreshToken: ${tokenResponse.refreshToken}")
+                val edit = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE).edit()
+                edit.putString(ID_TOKEN_KEY_NAME, tokenResponse.idToken)
+                edit.putString(ACCESS_TOKEN_KEY_NAME, tokenResponse.accessToken)
+                edit.putString(REFRESH_TOKEN_KEY_NAME, tokenResponse.refreshToken)
+                edit.apply()
+                Log.i(TAG, "saved $ID_TOKEN_KEY_NAME, $ACCESS_TOKEN_KEY_NAME and $REFRESH_TOKEN_KEY_NAME to '$DRIVE_SHARED_PREFERENCES' shared preferences file")
+                return@withContext tokenResponse
             }
-            val edit = pref.edit()
-            edit.putString(ACCESS_TOKEN_KEY_NAME, requestToken.accessToken)
-            edit.putLong(EXPIRES_IN_SECONDS_KEY_NAME, currTime + 100 * requestToken.expiresInSeconds)
-            edit.apply()
+        }*/
+
+        val pref = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
+
+        if (!pref.contains(ID_TOKEN_KEY_NAME)) {
+            Log.i(TAG, "requesting access token for the first time")
+            runBlocking {
+                requestAccessToken()
+            }
+        } else {
+            val idToken = pref.getString(ID_TOKEN_KEY_NAME, null)
+            val googleIdToken = GoogleIdToken.parse(jsonFactory, idToken)
+
+            if (googleIdToken.verifyExpirationTime(Calendar.getInstance().timeInMillis, 0)
+                && googleIdToken.verifyIssuer(listOf("accounts.google.com", "https://accounts.google.com"))) {
+                Log.i(TAG, "access token is present and valid")
+            } else {
+                Log.i(TAG, "requesting access token again (because the token is invalid) using the refresh token")
+                runBlocking {
+                    val refreshToken = pref.getString(REFRESH_TOKEN_KEY_NAME, null)
+                        ?: throw Exception("Refresh token is missing")
+                    requestAccessToken(refreshToken)
+                }
+            }
         }
 
         val accessToken = pref.getString(ACCESS_TOKEN_KEY_NAME, null)
+        Log.i(TAG, "retrieved access token '$accessToken'")
         val credentials = GoogleCredential().setAccessToken(accessToken)
 
-        return@lazy Drive.Builder(httpTransport, jacksonFactory, credentials)
+        return Drive.Builder(httpTransport, jsonFactory, credentials)
             .setApplicationName(context.resources.getString(R.string.app_name))
             .build()
     }
