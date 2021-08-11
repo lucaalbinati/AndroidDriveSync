@@ -66,21 +66,21 @@ class MainActivity: AppCompatActivity() {
 
     private fun getGoogleDriveClient(): GoogleDriveClient {
         val pref = this.getSharedPreferences(GoogleDriveClient.DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
-        var serverAuthCode = pref.getString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME, null)
+        var serverAuthCode = pref.getString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY, null)
 
         if (serverAuthCode == null) {
             // TODO move some of this in SignInActivity
-            Log.i("MainActivity", "Did not find a ${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME} in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file")
+            Log.i("MainActivity", "did not find a '${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY}' in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file")
             val account = GoogleSignIn.getLastSignedInAccount(this)
             serverAuthCode = account!!.serverAuthCode!!
-            Log.i("MainActivity", "Got new server authentication code $serverAuthCode")
+            Log.i("MainActivity", "got new server authentication code $serverAuthCode")
 
             val editor = pref.edit()
-            editor.putString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME, serverAuthCode)
+            editor.putString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY, serverAuthCode)
             editor.apply()
-            Log.i("MainActivity", "Saved new server authentication code $serverAuthCode")
+            Log.i("MainActivity", "saved new server authentication code $serverAuthCode")
         } else {
-            Log.i("MainActivity", "Found a ${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY_NAME} in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file: $serverAuthCode")
+            Log.i("MainActivity", "found a '${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY}' in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file: $serverAuthCode")
         }
 
         // Create GoogleDriveClient
