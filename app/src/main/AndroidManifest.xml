@@ -35,8 +35,6 @@
             android:name=".boot.FilesPermissionActivity"
             android:theme="@style/Theme.SignInAndFilesPermission"/>
 
-        <service android:enabled="true" android:name=".synchronizeservice.SynchronizeService"/>
-
         <receiver android:name=".synchronizeservice.SynchronizeBroadcastReceiver" android:enabled="true" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>

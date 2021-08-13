@@ -1,6 +1,5 @@
 package com.example.androiddrivesync.main
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
@@ -10,18 +9,18 @@ import androidx.work.*
 import com.example.androiddrivesync.*
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveClient
-import com.example.androiddrivesync.synchronizeservice.SynchronizeService
-import com.example.androiddrivesync.utility.CredentialsSharedPreferences
-import com.example.androiddrivesync.utility.LocalFilesToSynchronizeHandler
-import com.example.androiddrivesync.utility.Utility
+import com.example.androiddrivesync.synchronizeservice.SynchronizeNotification
+import com.example.androiddrivesync.synchronizeservice.SynchronizeWorker
+import com.example.androiddrivesync.utils.CredentialsSharedPreferences
+import com.example.androiddrivesync.utils.LocalFilesToSynchronizeHandler
+import com.example.androiddrivesync.utils.Utility
 import com.google.android.gms.auth.api.signin.*
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 
-
-class MainActivity: AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "MainActivity"
     }
@@ -44,8 +43,8 @@ class MainActivity: AppCompatActivity() {
         // Initialize and populate RecyclerView
         initializeGoogleDriveClientAndPopulate()
 
-        // Start the service, in case it wasn't running
-        startService(Intent(this, SynchronizeService::class.java))
+        // Start periodic work request, if not already
+        SynchronizeWorker.setupPeriodicWorkRequest(this)
     }
 
     override fun onPause() {
@@ -79,8 +78,7 @@ class MainActivity: AppCompatActivity() {
     }
 
     fun syncDrive(v: View) {
-        // FIXME: move somewhere else
-        stopService(Intent(this, SynchronizeService::class.java))
+        // TODO
     }
 
     fun refreshStatus(v: View) {

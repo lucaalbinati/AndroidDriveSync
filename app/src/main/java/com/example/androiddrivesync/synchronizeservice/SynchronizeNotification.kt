@@ -1,4 +1,4 @@
-package com.example.androiddrivesync.main
+package com.example.androiddrivesync.synchronizeservice
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -6,7 +6,7 @@ import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.androiddrivesync.R
-import com.example.androiddrivesync.utility.Utility
+import com.example.androiddrivesync.utils.Utility
 
 class SynchronizeNotification {
     companion object {
@@ -26,7 +26,7 @@ class SynchronizeNotification {
 
         fun getInitialBuilder(context: Context): NotificationCompat.Builder {
             return NotificationCompat.Builder(context, SYNCHRONIZING_CHANNEL_ID)
-                .setSmallIcon(R.raw.synchronizing)
+                .setSmallIcon(R.drawable.synchronizing)
                 .setContentTitle(context.resources.getString(R.string.synchronization_synchronizing_title))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
@@ -41,13 +41,30 @@ class SynchronizeNotification {
             notificationManagerCompat.notify(notificationId, builder.build())
         }
 
-        fun updateProgress(context: Context, notificationManagerCompat: NotificationManagerCompat, notificationId: Int, builder: NotificationCompat.Builder, sizeUnit: String, totalBytes: Int, currentBytes: Int) {
+        fun updateProgress(
+            context: Context,
+            notificationManagerCompat: NotificationManagerCompat,
+            notificationId: Int,
+            builder: NotificationCompat.Builder,
+            sizeUnit: String,
+            totalBytes: Int,
+            currentBytes: Int
+        ) {
             val totalBytesInSizeUnit = Utility.convertToSizeUnit(totalBytes, sizeUnit)
             val currentBytesInSizeUnit = Utility.convertToSizeUnit(currentBytes, sizeUnit)
 
-            builder.setContentText(context.resources.getString(R.string.synchronization_synchronizing_uploading, currentBytesInSizeUnit, totalBytesInSizeUnit, sizeUnit))
-            builder.setProgress(totalBytes,
-                Integer.max(currentBytes, (0.05 * totalBytes).toInt()), false)
+            builder.setContentText(
+                context.resources.getString(
+                    R.string.synchronization_synchronizing_uploading,
+                    currentBytesInSizeUnit,
+                    totalBytesInSizeUnit,
+                    sizeUnit
+                )
+            )
+            builder.setProgress(
+                totalBytes,
+                Integer.max(currentBytes, (0.05 * totalBytes).toInt()), false
+            )
             notificationManagerCompat.notify(notificationId, builder.build())
         }
 

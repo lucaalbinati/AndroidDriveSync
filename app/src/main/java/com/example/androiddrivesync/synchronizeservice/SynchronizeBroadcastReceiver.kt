@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 
-class SynchronizeBroadcastReceiver: BroadcastReceiver() {
+class SynchronizeBroadcastReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "SynchronizeBroadcastReceiver"
     }
@@ -19,7 +19,7 @@ class SynchronizeBroadcastReceiver: BroadcastReceiver() {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED -> {
                 Log.i(TAG, "received ${intent.action} broadcast: $intent")
-                context!!.startService(Intent(context, SynchronizeService::class.java))
+                SynchronizeWorker.setupPeriodicWorkRequest(context!!)
             }
             else -> Log.i(TAG, "received ${intent.action} broadcast:")
         }

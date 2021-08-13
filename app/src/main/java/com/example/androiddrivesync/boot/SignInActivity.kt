@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.drive.GoogleDriveClient.Companion.REFRESH_TOKEN_KEY
-import com.example.androiddrivesync.utility.CredentialsSharedPreferences
+import com.example.androiddrivesync.utils.CredentialsSharedPreferences
 import com.google.android.gms.auth.api.signin.*
 import com.google.android.gms.common.Scopes
 import com.google.android.gms.common.util.ScopeUtil
@@ -20,7 +20,7 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import kotlinx.coroutines.*
 import java.util.*
 
-class SignInActivity: AppCompatActivity() {
+class SignInActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "SignInActivity"
         const val FORCE_REFRESH_TOKEN_KEY = "forceRefreshToken"
@@ -156,7 +156,8 @@ class SignInActivity: AppCompatActivity() {
         val jsonFactory = JacksonFactory.getDefaultInstance()
         val clientId = CredentialsSharedPreferences.getClientId(this)
         val verifier = GoogleIdTokenVerifier.Builder(httpTransport, jsonFactory).setAudience(
-            Collections.singletonList(clientId)).build()
+            Collections.singletonList(clientId)
+        ).build()
 
         return withContext(Dispatchers.IO) {
             try {

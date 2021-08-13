@@ -1,8 +1,8 @@
 package com.example.androiddrivesync.drive
 
 import android.content.Context
-import com.example.androiddrivesync.utility.MimeTypeNotFoundException
-import com.example.androiddrivesync.utility.Utility
+import com.example.androiddrivesync.utils.MimeTypeNotFoundException
+import com.example.androiddrivesync.utils.Utility
 import com.google.api.client.http.FileContent
 import com.google.api.client.util.DateTime
 import com.google.api.services.drive.Drive

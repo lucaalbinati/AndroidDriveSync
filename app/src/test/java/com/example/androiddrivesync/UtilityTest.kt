@@ -1,7 +1,7 @@
 package com.example.androiddrivesync
 
-import com.example.androiddrivesync.utility.MimeTypeNotFoundException
-import com.example.androiddrivesync.utility.Utility
+import com.example.androiddrivesync.utils.MimeTypeNotFoundException
+import com.example.androiddrivesync.utils.Utility
 import org.junit.Assert
 import org.junit.Test
 

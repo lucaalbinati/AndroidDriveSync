@@ -7,12 +7,11 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.example.androiddrivesync.boot.SignInActivity
-import com.example.androiddrivesync.main.SynchronizeWorker
+import com.example.androiddrivesync.synchronizeservice.SynchronizeWorker
 import com.google.android.gms.tasks.Tasks
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.*
 
 @RunWith(AndroidJUnit4::class)
 class SynchronizeWorkerTest {
@@ -22,19 +21,18 @@ class SynchronizeWorkerTest {
     @Before
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        val googleSignInClient = SignInActivity.getGoogleSignInClient(context)
+        val googleSignInClient = SignInActivity.getGoogleSignInClient(context, false)
         val task = googleSignInClient.silentSignIn()
         Tasks.await(task)
     }
 
     @Test
     fun test() {
-        val filesToSynchronize = Collections.emptyList<String>()
         val workManager = WorkManager.getInstance(context)
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
         val testDriver = WorkManagerTestInitHelper.getTestDriver(context)
 
-        val requestId = SynchronizeWorker.setupPeriodicWorkRequest(context, filesToSynchronize)
+        val requestId = SynchronizeWorker.setupPeriodicWorkRequest(context)
         testDriver?.setPeriodDelayMet(requestId)
 
         val workInfoFuture = workManager.getWorkInfoById(requestId)

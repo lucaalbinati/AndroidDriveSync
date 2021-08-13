@@ -10,8 +10,8 @@ import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.createDri
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.deleteDriveFile
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFileId
 import com.example.androiddrivesync.drive.GoogleDriveUtility.Companion.getDriveFilesNotPresentLocally
-import com.example.androiddrivesync.utility.CredentialsSharedPreferences
-import com.example.androiddrivesync.utility.Utility
+import com.example.androiddrivesync.utils.CredentialsSharedPreferences
+import com.example.androiddrivesync.utils.Utility
 import com.google.api.client.googleapis.auth.oauth2.*
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
@@ -92,7 +92,8 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
             val googleIdToken = GoogleIdToken.parse(jsonFactory, idToken)
 
             if (googleIdToken.verifyExpirationTime(Calendar.getInstance().timeInMillis, 0)
-                && googleIdToken.verifyIssuer(listOf("accounts.google.com", "https://accounts.google.com"))) {
+                && googleIdToken.verifyIssuer(listOf("accounts.google.com", "https://accounts.google.com"))
+            ) {
                 Log.i(TAG, "access token is present and valid")
             } else {
                 Log.i(TAG, "requesting access token again (because the token is invalid) using the refresh token")
@@ -132,7 +133,8 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
                     Utility.FileSyncStatus.TO_BE_DELETED_FROM_BASE_DIR -> {
                         deleteDriveFile(service, action.parentFolderId!!)
                     }
-                    Utility.FileSyncStatus.SYNCED -> {}
+                    Utility.FileSyncStatus.SYNCED -> {
+                    }
                     Utility.FileSyncStatus.UNKNOWN -> throw Exception("File '${action.filename}' has status '${action.syncStatus}'")
                 }
             } catch (e: Exception) {
@@ -233,9 +235,13 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
             return checkFileDriveStatus(localRelativeFilepath)
         } else {
             val localFiles = localFile.listFiles()!!
-            val localFilesStatus = localFiles.map { f -> checkFileOrFolderDriveStatus(f.relativeTo(
-                BASE_STORAGE_DIR
-            ).path) }
+            val localFilesStatus = localFiles.map { f ->
+                checkFileOrFolderDriveStatus(
+                    f.relativeTo(
+                        BASE_STORAGE_DIR
+                    ).path
+                )
+            }
 
             return if (localFilesStatus.isEmpty()) {
                 Utility.FileSyncStatus.UNKNOWN
