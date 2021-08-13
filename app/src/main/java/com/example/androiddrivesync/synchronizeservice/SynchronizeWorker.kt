@@ -23,7 +23,14 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
 
         fun setupPeriodicWorkRequest(context: Context): UUID {
             Log.i(TAG, "enqueuing PeriodicWorkRequest")
-            val workRequest = PeriodicWorkRequestBuilder<SynchronizeWorker>(WORK_REPEAT_INTERVAL).build()
+            val workRequest = PeriodicWorkRequestBuilder<SynchronizeWorker>(WORK_REPEAT_INTERVAL)
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.UNMETERED)
+                        .setRequiresBatteryNotLow(true)
+                        .build()
+                )
+                .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, workRequest)
             return workRequest.id
         }
