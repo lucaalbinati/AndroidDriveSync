@@ -23,13 +23,8 @@ class GoogleDriveClientTest {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
 
-        try {
-            val task = SignInActivity.getGoogleSignInClient(context).silentSignIn()
-            Tasks.await(task)
-        } catch (e: ExecutionException) {
-            context.startActivity(SignInActivity.getGoogleSignInClient(context).signInIntent)
-            SignInActivity.getGoogleSignInClient(context).silentSignIn()
-        }
+        val task = SignInActivity.getGoogleSignInClient(context, false).silentSignIn()
+        Tasks.await(task)
 
         val account = GoogleSignIn.getLastSignedInAccount(context)
         Assert.assertNotNull(account)

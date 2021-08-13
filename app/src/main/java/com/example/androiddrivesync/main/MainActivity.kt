@@ -2,7 +2,6 @@ package com.example.androiddrivesync.main
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +22,10 @@ import kotlin.collections.ArrayList
 
 
 class MainActivity: AppCompatActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     private val scope = CoroutineScope(Dispatchers.Main)
 
     private lateinit var googleDriveClient: GoogleDriveClient
@@ -55,36 +58,13 @@ class MainActivity: AppCompatActivity() {
 
     private fun initializeGoogleDriveClientAndPopulate() {
         // Setup Google Drive Client
-        googleDriveClient = getGoogleDriveClient()
+        googleDriveClient = GoogleDriveClient.setupGoogleDriveClient(this)
 
         // Setup RecyclerView
         synchronizedFileHandler = setupSynchronizedFileHandler()
 
         // Update files' status
         refreshStatus(this.findViewById(R.id.refresh_status_fab))
-    }
-
-    private fun getGoogleDriveClient(): GoogleDriveClient {
-        val pref = this.getSharedPreferences(GoogleDriveClient.DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
-        var serverAuthCode = pref.getString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY, null)
-
-        if (serverAuthCode == null) {
-            // TODO move some of this in SignInActivity
-            Log.i("MainActivity", "did not find a '${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY}' in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file")
-            val account = GoogleSignIn.getLastSignedInAccount(this)
-            serverAuthCode = account!!.serverAuthCode!!
-            Log.i("MainActivity", "got new server authentication code $serverAuthCode")
-
-            val editor = pref.edit()
-            editor.putString(GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY, serverAuthCode)
-            editor.apply()
-            Log.i("MainActivity", "saved new server authentication code $serverAuthCode")
-        } else {
-            Log.i("MainActivity", "found a '${GoogleDriveClient.SERVER_AUTHENTICATION_CODE_KEY}' in the '${GoogleDriveClient.DRIVE_SHARED_PREFERENCES}' shared preferences file: $serverAuthCode")
-        }
-
-        // Create GoogleDriveClient
-        return GoogleDriveClient(this, serverAuthCode)
     }
 
     private fun setupSynchronizedFileHandler(): SynchronizedFileHandler {

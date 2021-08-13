@@ -7,7 +7,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.*
 import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.utility.Utility
-import com.google.android.gms.auth.api.signin.GoogleSignIn
 import java.io.File
 import java.time.Duration
 import java.util.*
@@ -30,16 +29,6 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, workRequest)
             return workRequest.id
         }
-
-        /*fun observeWorkRequest(context: AppCompatActivity, workRequestId: UUID, onChange: (WorkInfo.State, Data) -> Unit) {
-            WorkManager.getInstance(context)
-                .getWorkInfoByIdLiveData(workRequestId)
-                .observe(context, { workInfo: WorkInfo? ->
-                    if (workInfo != null) {
-                        onChange(workInfo.state, workInfo.progress)
-                    }
-                })
-        }*/
     }
 
     override suspend fun doWork(): Result {
@@ -59,11 +48,10 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
 
         try {
             // Get the list of files to synchronize
-            val filesToSynchronize: List<String> =
-                inputData.getStringArray(FILES_TO_SYNCHRONIZE_KEY)!!.toList()
+            val filesToSynchronize: List<String> = inputData.getStringArray(FILES_TO_SYNCHRONIZE_KEY)!!.toList()
 
             // Get a GoogleDriveClient instance
-            val googleDriveClient = getGoogleDriveClient()
+            val googleDriveClient = GoogleDriveClient.setupGoogleDriveClient(applicationContext)
 
             // Get the actions needed for each file, along with some upload size information
             val fileSyncActions = googleDriveClient.getFileSyncActions(filesToSynchronize)
@@ -85,15 +73,6 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters): Co
         Log.i("synchronizeWorker", "finish doWork()")
 
         return Result.success()
-    }
-
-    private fun getGoogleDriveClient(): GoogleDriveClient {
-        // Get Google account and server authentication code
-        val account = GoogleSignIn.getLastSignedInAccount(applicationContext)
-        val serverAuthCode = account!!.serverAuthCode!!
-
-        // Create GoogleDriveClient
-        return GoogleDriveClient(applicationContext, serverAuthCode)
     }
 
     private suspend fun doSynchronize(notificationManagerCompat: NotificationManagerCompat, notificationId: Int, builder: NotificationCompat.Builder, googleDriveClient: GoogleDriveClient, fileSyncActions: List<Utility.FileSyncAction>, totalSize: Int, sizeUnit: String) {

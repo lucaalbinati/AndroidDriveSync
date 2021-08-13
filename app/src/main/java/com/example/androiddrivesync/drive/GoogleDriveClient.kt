@@ -25,12 +25,27 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
     companion object {
         private const val TAG = "GoogleDriveClient"
         const val DRIVE_SHARED_PREFERENCES = "drive"
-        const val SERVER_AUTHENTICATION_CODE_KEY = "serverAuthenticationCode"
+        private const val SERVER_AUTHENTICATION_CODE_KEY = "serverAuthenticationCode"
         private const val ID_TOKEN_KEY = "idToken"
         private const val ACCESS_TOKEN_KEY = "accessToken"
         const val REFRESH_TOKEN_KEY = "refreshToken"
         private const val BASE_STORAGE_DIR_NAME = "storage/emulated/0/"
         val BASE_STORAGE_DIR = File(BASE_STORAGE_DIR_NAME)
+
+        fun setupGoogleDriveClient(context: Context): GoogleDriveClient {
+            val pref = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
+            val serverAuthCode: String = pref.getString(SERVER_AUTHENTICATION_CODE_KEY, null)
+                ?: throw Exception("Server authentication code is null")
+            return GoogleDriveClient(context, serverAuthCode)
+        }
+
+        fun saveServerAuthenticationCode(context: Context, serverAuthCode: String) {
+            val pref = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
+            val editor = pref.edit()
+            editor.putString(SERVER_AUTHENTICATION_CODE_KEY, serverAuthCode)
+            editor.apply()
+            Log.i(TAG, "saved server authentication code '$serverAuthCode' to '${DRIVE_SHARED_PREFERENCES}' shared preferences file")
+        }
     }
 
     private val httpTransport = NetHttpTransport()

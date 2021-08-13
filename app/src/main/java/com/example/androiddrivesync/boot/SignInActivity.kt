@@ -50,7 +50,7 @@ class SignInActivity: AppCompatActivity() {
             if (GoogleSignIn.getLastSignedInAccount(context) != null) {
                 getGoogleSignInClient(context, false).silentSignIn().addOnCompleteListener {
                     if (it.isSuccessful) {
-                        Log.i(TAG, "silent sign in task was successful")
+                        // TODO should we add also check for isServerAuthCodeMissing()?
                         if (isRefreshTokenMissing(context)) {
                             Log.i(TAG, "'$REFRESH_TOKEN_KEY' missing, proceeding with failure callback (with '$FORCE_REFRESH_TOKEN_KEY' set to 'true')")
                             onFailureCallback(true)
@@ -71,7 +71,7 @@ class SignInActivity: AppCompatActivity() {
 
         private fun isRefreshTokenMissing(context: Context): Boolean {
             val pref = context.getSharedPreferences(GoogleDriveClient.DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
-            return pref.contains(REFRESH_TOKEN_KEY)
+            return !pref.contains(REFRESH_TOKEN_KEY)
         }
     }
 
@@ -82,8 +82,15 @@ class SignInActivity: AppCompatActivity() {
 
         when (it.resultCode) {
             RESULT_OK -> {
+                Log.i(TAG, "retrieving and verifying task result")
                 val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
                 verifySignIn(task)
+
+                Log.i(TAG, "saving serverAuthCode")
+                val serverAuthCode = task.result?.serverAuthCode!!
+                GoogleDriveClient.saveServerAuthenticationCode(this, serverAuthCode)
+
+                Log.i(TAG, "preparing to finish activity")
                 setResult(RESULT_OK)
                 finish()
             }
