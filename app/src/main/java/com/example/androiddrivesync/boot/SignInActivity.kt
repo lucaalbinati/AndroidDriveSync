@@ -89,6 +89,7 @@ class SignInActivity : AppCompatActivity() {
                 Log.i(TAG, "saving serverAuthCode")
                 val serverAuthCode = task.result?.serverAuthCode!!
                 GoogleDriveClient.saveServerAuthenticationCode(this, serverAuthCode)
+                GoogleDriveClient.clearSharedPreferencesEntries(this)
 
                 Log.i(TAG, "preparing to finish activity")
                 setResult(RESULT_OK)

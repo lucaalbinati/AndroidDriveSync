@@ -46,6 +46,16 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
             editor.apply()
             Log.i(TAG, "saved server authentication code '$serverAuthCode' to '${DRIVE_SHARED_PREFERENCES}' shared preferences file")
         }
+
+        fun clearSharedPreferencesEntries(context: Context) {
+            Log.i(TAG, "clearing '${DRIVE_SHARED_PREFERENCES}' entries '$ID_TOKEN_KEY', '$ACCESS_TOKEN_KEY' and '$REFRESH_TOKEN_KEY'")
+            val pref = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE)
+            val editor = pref.edit()
+            editor.putString(ID_TOKEN_KEY, null)
+            editor.putString(ACCESS_TOKEN_KEY, null)
+            editor.putString(REFRESH_TOKEN_KEY, null)
+            editor.apply()
+        }
     }
 
     private val httpTransport = NetHttpTransport()
