@@ -59,17 +59,19 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
             val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
 
             return withContext(Dispatchers.IO) {
-                val tokenResponse = if (refreshToken == null) {
-                    GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory, clientId, clientSecret, authorizationCode, "").execute()
+                val tokenResponse: GoogleTokenResponse
+                if (refreshToken == null) {
+                    tokenResponse = GoogleAuthorizationCodeTokenRequest(httpTransport, jsonFactory, clientId, clientSecret, authorizationCode, "").execute()
+                    if (tokenResponse.refreshToken == null) {
+                        throw Exception("Expected to receive a '$REFRESH_TOKEN_KEY' but got none.")
+                    }
                 } else {
-                    GoogleRefreshTokenRequest(httpTransport, jsonFactory, refreshToken, clientId, clientSecret).execute()
+                    tokenResponse = GoogleRefreshTokenRequest(httpTransport, jsonFactory, refreshToken, clientId, clientSecret).execute()
                 }
                 Log.i(TAG, "received token response $tokenResponse")
                 Log.i(TAG, "received '$ACCESS_TOKEN_KEY': ${tokenResponse.accessToken}")
                 Log.i(TAG, "received '$REFRESH_TOKEN_KEY': ${tokenResponse.refreshToken}")
-                if (tokenResponse.refreshToken == null) {
-                    throw Exception("Expected to receive a '$REFRESH_TOKEN_KEY' but got none.")
-                }
+
                 val edit = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE).edit()
                 edit.putString(ID_TOKEN_KEY, tokenResponse.idToken)
                 edit.putString(ACCESS_TOKEN_KEY, tokenResponse.accessToken)
@@ -96,10 +98,9 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
             ) {
                 Log.i(TAG, "access token is present and valid")
             } else {
-                Log.i(TAG, "requesting access token again (because the token is invalid) using the refresh token")
                 runBlocking {
-                    val refreshToken = pref.getString(REFRESH_TOKEN_KEY, null)
-                        ?: throw Exception("Refresh token is missing")
+                    val refreshToken = pref.getString(REFRESH_TOKEN_KEY, null) ?: throw Exception("Refresh token is missing")
+                    Log.i(TAG, "requesting access token again (because the token is invalid) using the refresh token: $refreshToken")
                     requestAccessToken(refreshToken)
                 }
             }
