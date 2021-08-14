@@ -1,5 +1,6 @@
 package com.example.androiddrivesync.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
@@ -10,6 +11,7 @@ import com.example.androiddrivesync.*
 import com.example.androiddrivesync.R
 import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.synchronizeservice.SynchronizeNotification
+import com.example.androiddrivesync.synchronizeservice.SynchronizeSettingsActivity
 import com.example.androiddrivesync.synchronizeservice.SynchronizeWorker
 import com.example.androiddrivesync.utils.CredentialsSharedPreferences
 import com.example.androiddrivesync.utils.LocalFilesToSynchronizeHandler
@@ -78,7 +80,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun syncDrive(v: View) {
-        // TODO
+        // TODO change name, icon and location on screen
+        startActivity(Intent(this, SynchronizeSettingsActivity::class.java))
     }
 
     fun refreshStatus(v: View) {
