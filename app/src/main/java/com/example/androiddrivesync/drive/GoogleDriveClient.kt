@@ -79,13 +79,16 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
                     tokenResponse = GoogleRefreshTokenRequest(httpTransport, jsonFactory, refreshToken, clientId, clientSecret).execute()
                 }
                 Log.i(TAG, "received token response $tokenResponse")
+                Log.i(TAG, "received '$ID_TOKEN_KEY': ${tokenResponse.idToken}")
                 Log.i(TAG, "received '$ACCESS_TOKEN_KEY': ${tokenResponse.accessToken}")
                 Log.i(TAG, "received '$REFRESH_TOKEN_KEY': ${tokenResponse.refreshToken}")
 
                 val edit = context.getSharedPreferences(DRIVE_SHARED_PREFERENCES, MODE_PRIVATE).edit()
                 edit.putString(ID_TOKEN_KEY, tokenResponse.idToken)
                 edit.putString(ACCESS_TOKEN_KEY, tokenResponse.accessToken)
-                edit.putString(REFRESH_TOKEN_KEY, tokenResponse.refreshToken)
+                if (tokenResponse.refreshToken != null) {
+                    edit.putString(REFRESH_TOKEN_KEY, tokenResponse.refreshToken)
+                }
                 edit.apply()
                 Log.i(TAG, "saved '$ID_TOKEN_KEY', '$ACCESS_TOKEN_KEY' and '$REFRESH_TOKEN_KEY' to '$DRIVE_SHARED_PREFERENCES' shared preferences file")
                 return@withContext tokenResponse
