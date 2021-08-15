@@ -107,7 +107,7 @@ class GoogleDriveUtility {
             }
         }
 
-        suspend fun checkDriveFileStatus(service: Drive, localRelativeFilepath: String, filename: String, driveParentFolderId: String): Utility.FileSyncStatus {
+        suspend fun checkDriveFileStatus(service: Drive, localRelativeFilepath: String, filename: String, driveParentFolderId: String): FileSyncStatus {
             val query = "name='${filename}' and ('${driveParentFolderId}' in parents) and trashed=False"
             val files = sendFilesDriveQuery(service, query, extraFileFields = setOf("modifiedTime"))
 
@@ -116,16 +116,16 @@ class GoogleDriveUtility {
             }
 
             if (files.size == 0) {
-                return Utility.FileSyncStatus.NOT_PRESENT
+                return FileSyncStatus.NOT_PRESENT
             }
 
             val driveModifiedDate = (files[0]["modifiedTime"] as DateTime).value
             val localModifiedDate = File(GoogleDriveClient.BASE_STORAGE_DIR, localRelativeFilepath).lastModified()
 
             return if (driveModifiedDate < localModifiedDate) {
-                Utility.FileSyncStatus.OUT_OF_SYNC
+                FileSyncStatus.OUT_OF_SYNC
             } else {
-                Utility.FileSyncStatus.SYNCED
+                FileSyncStatus.SYNCED
             }
         }
 

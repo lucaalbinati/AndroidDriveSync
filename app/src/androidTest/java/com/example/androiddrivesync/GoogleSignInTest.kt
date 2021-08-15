@@ -21,7 +21,7 @@ class GoogleSignInTest {
     @Before
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        googleSignInClient = SignInActivity.getGoogleSignInClient(context)
+        googleSignInClient = SignInActivity.getGoogleSignInClient(context, false)
     }
 
     @Test

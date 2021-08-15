@@ -13,11 +13,9 @@ class UtilityTest {
         Assert.assertEquals(mimeType, "text/plain")
     }
 
-    @Test
+    @Test(expected = MimeTypeNotFoundException::class)
     fun getMimeTypeThatDoesNotExist() {
-        Assert.assertThrows(MimeTypeNotFoundException::class.java) {
-            Utility.getTypeFromFilename("myFile.backup")
-        }
+        Utility.getTypeFromFilename("myFile.backup")
     }
 
 }

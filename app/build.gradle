@@ -31,7 +31,6 @@ android {
         jvmTarget = '1.8'
         freeCompilerArgs = ["-Xallow-result-return-type"]
     }
-
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }

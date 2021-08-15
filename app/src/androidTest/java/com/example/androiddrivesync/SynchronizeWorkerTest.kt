@@ -33,9 +33,9 @@ class SynchronizeWorkerTest {
         val testDriver = WorkManagerTestInitHelper.getTestDriver(context)
 
         val requestId = SynchronizeWorker.setupPeriodicWorkRequest(context)
-        testDriver?.setPeriodDelayMet(requestId)
+        testDriver?.setPeriodDelayMet(requestId!!)
 
-        val workInfoFuture = workManager.getWorkInfoById(requestId)
+        val workInfoFuture = workManager.getWorkInfoById(requestId!!)
         while (!(workInfoFuture.isDone || workInfoFuture.isCancelled)) {}
 
         val workInfo = workInfoFuture.get()

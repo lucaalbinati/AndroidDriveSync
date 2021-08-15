@@ -9,13 +9,13 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.work.*
 import com.example.androiddrivesync.*
 import com.example.androiddrivesync.R
+import com.example.androiddrivesync.drive.FileSyncStatus
 import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.synchronizeservice.SynchronizeNotification
 import com.example.androiddrivesync.synchronizeservice.SynchronizeSettingsActivity
 import com.example.androiddrivesync.synchronizeservice.SynchronizeWorker
 import com.example.androiddrivesync.utils.CredentialsSharedPreferences
 import com.example.androiddrivesync.utils.LocalFilesToSynchronizeHandler
-import com.example.androiddrivesync.utils.Utility
 import com.google.android.gms.auth.api.signin.*
 import kotlinx.coroutines.*
 import java.io.File
@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         val localFilesToSynchronize = LocalFilesToSynchronizeHandler.getLocalFilesToSynchronize(this)
         val synchronizedFiles = ArrayList<SynchronizedFile>()
         for (localFile in localFilesToSynchronize) {
-            synchronizedFiles.add(SynchronizedFile(localFile, Utility.FileSyncStatus.UNKNOWN))
+            synchronizedFiles.add(SynchronizedFile(localFile, FileSyncStatus.UNKNOWN))
         }
 
         return SynchronizedFileHandler(this, recyclerView, synchronizedFiles)
@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val updateSyncStatusUI: (String?, Utility.FileSyncStatus) -> Unit = { localRelativeFilepath, syncStatus ->
+    private val updateSyncStatusUI: (String?, FileSyncStatus) -> Unit = { localRelativeFilepath, syncStatus ->
         if (localRelativeFilepath != null) {
             val synchronizedFile = getSynchronizedFileByFilepath(localRelativeFilepath)
             if (syncStatus != synchronizedFile.syncStatus) {

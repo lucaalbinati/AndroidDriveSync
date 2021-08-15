@@ -1,10 +1,10 @@
 package com.example.androiddrivesync.main
 
-import com.example.androiddrivesync.utils.Utility
+import com.example.androiddrivesync.drive.FileSyncStatus
 
-class SynchronizedFile(val name: String, val syncStatus: Utility.FileSyncStatus) {
+class SynchronizedFile(val name: String, val syncStatus: FileSyncStatus) {
 
-    fun withNewSyncStatus(syncStatus: Utility.FileSyncStatus): SynchronizedFile {
+    fun withNewSyncStatus(syncStatus: FileSyncStatus): SynchronizedFile {
         return SynchronizedFile(name, syncStatus)
     }
 }

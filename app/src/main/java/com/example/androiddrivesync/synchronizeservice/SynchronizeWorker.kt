@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.*
+import com.example.androiddrivesync.drive.FileSyncAction
 import com.example.androiddrivesync.drive.GoogleDriveClient
 import com.example.androiddrivesync.utils.LocalFilesToSynchronizeHandler
 import com.example.androiddrivesync.utils.Utility
@@ -126,7 +127,7 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
         notificationId: Int,
         builder: NotificationCompat.Builder,
         googleDriveClient: GoogleDriveClient,
-        fileSyncActions: List<Utility.FileSyncAction>,
+        fileSyncActions: List<FileSyncAction>,
         totalSize: Int,
         sizeUnit: String
     ) {
