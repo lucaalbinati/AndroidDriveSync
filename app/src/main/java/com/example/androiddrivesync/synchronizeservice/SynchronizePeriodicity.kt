@@ -12,9 +12,13 @@ enum class SynchronizePeriodicity {
         }
     }
 
+    fun isRecurrent(): Boolean {
+        return listOf(DAILY, WEEKLY, MONTHLY).contains(this)
+    }
+
     fun convertToDuration(): Duration {
         return when (this) {
-            NEVER, ON_TAP -> throw UnsupportedOperationException("Cannot convert $this to a ${Duration::class.java.simpleName} object")
+            NEVER, ON_TAP -> throw UnsupportedOperationException("Cannot convert ${SynchronizePeriodicity::class.java.simpleName} '$this' to a ${Duration::class.java.simpleName} object")
             DAILY -> Duration.ofDays(1)
             WEEKLY -> Duration.ofDays(7)
             MONTHLY -> Duration.ofDays(31)

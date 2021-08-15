@@ -38,7 +38,7 @@
         <activity
             android:name=".synchronizeservice.SynchronizeSettingsActivity"
             android:label="Synchronization"
-            android:parentActivityName=".main.MainActivity"></activity>
+            android:parentActivityName=".main.MainActivity" />
 
         <receiver
             android:name=".synchronizeservice.SynchronizeBroadcastReceiver"

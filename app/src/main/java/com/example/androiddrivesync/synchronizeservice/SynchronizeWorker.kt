@@ -22,19 +22,38 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
         fun setupPeriodicWorkRequest(context: Context): UUID? {
             Log.i(TAG, "enqueuing PeriodicWorkRequest")
             val periodicity = SynchronizeSettingsSharedPreferencesHelper.getPeriodicity(context)
-            if (periodicity == SynchronizePeriodicity.NEVER || periodicity == SynchronizePeriodicity.ON_TAP) {
+            if (!periodicity.isRecurrent()) {
+                Log.i(TAG, "current periodicity $periodicity is not recurrent, so we are not setting up a PeriodicWorkRequest")
                 return null
             }
             val workRequest = PeriodicWorkRequestBuilder<SynchronizeWorker>(periodicity.convertToDuration())
-                .setConstraints(
-                    Constraints.Builder()
-                        .setRequiredNetworkType(NetworkType.UNMETERED)
-                        .setRequiresBatteryNotLow(true)
-                        .build()
-                )
+                .setConstraints(getWorkRequestConstraints())
                 .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(UNIQUE_WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, workRequest)
             return workRequest.id
+        }
+
+        fun setupSingleWorkRequest(context: Context): UUID {
+            Log.i(TAG, "enqueuing single WorkRequest")
+            val workRequest = OneTimeWorkRequestBuilder<SynchronizeWorker>()
+                .setConstraints(getWorkRequestConstraints())
+                .build()
+            WorkManager.getInstance(context).enqueue(workRequest)
+            return workRequest.id
+        }
+
+        private fun getWorkRequestConstraints(): Constraints {
+            return Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.UNMETERED)
+                .setRequiresBatteryNotLow(true)
+                .build()
+        }
+
+        suspend fun ifNotCurrentlyRunning(context: Context, callback: () -> Unit) {
+            val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(UNIQUE_WORK_NAME).await()
+            if (workInfos.size == 0) {
+                callback()
+            }
         }
 
         suspend fun updatePeriodicity(context: Context) {
@@ -46,8 +65,10 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
                     Log.i(TAG, "found 1 periodic work request")
                     WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK_NAME).await()
                     Log.i(TAG, "cancelled periodic work request")
-                    setupPeriodicWorkRequest(context)
-                    Log.i(TAG, "setup periodic work request with new periodicity")
+                    val workRequestId = setupPeriodicWorkRequest(context)
+                    if (workRequestId != null) {
+                        Log.i(TAG, "setup periodic work request (id: $workRequestId) with new periodicity")
+                    }
                 }
                 else -> {
                     throw Exception("Did not expect more than 1 periodic work request with unique work name '$UNIQUE_WORK_NAME'. Instead found ${workInfos.size}")
@@ -58,11 +79,6 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
 
     override suspend fun doWork(): Result {
         Log.i(TAG, "start doWork()")
-
-        if (!SynchronizeSettingsSharedPreferencesHelper.isEnabled(applicationContext)) {
-            Log.i(TAG, "synchronize is disabled")
-            return Result.success()
-        }
 
         val builder = SynchronizeNotification.getInitialBuilder(applicationContext)
         val notificationId = builder.hashCode()

@@ -8,31 +8,8 @@ class SynchronizeSettingsSharedPreferencesHelper {
     companion object {
         private const val TAG = "SynchronizeSettingsSharedPreferencesHelper"
         private const val SYNCHRONIZE_SETTINGS_SHARED_PREFERENCES = "synchronizeSettings"
-        private const val ENABLED = "enabled"
-        private const val ENABLED_DEFAULT = true
         private const val PERIODICITY = "periodicity"
         private val PERIODICITY_DEFAULT = SynchronizePeriodicity.DAILY.toString()
-
-        fun setEnable(context: Context, enabled: Boolean) {
-            val editor = context.getSharedPreferences(SYNCHRONIZE_SETTINGS_SHARED_PREFERENCES, MODE_PRIVATE).edit()
-            editor.putBoolean(ENABLED, enabled)
-            editor.apply()
-        }
-
-        fun isEnabled(context: Context): Boolean {
-            val pref = context.getSharedPreferences(SYNCHRONIZE_SETTINGS_SHARED_PREFERENCES, MODE_PRIVATE)
-
-            if (!pref.contains(ENABLED)) {
-                Log.i(TAG, "synchronize setting '$ENABLED' is missing; creating it and setting it to '$ENABLED_DEFAULT'")
-                val editor = pref.edit()
-                editor.putBoolean(ENABLED, ENABLED_DEFAULT)
-                editor.apply()
-            }
-
-            val isEnabled = pref.getBoolean(ENABLED, ENABLED_DEFAULT)
-            Log.i(TAG, "synchronize is set to '$isEnabled'")
-            return isEnabled
-        }
 
         fun setPeriodicity(context: Context, periodicity: SynchronizePeriodicity) {
             val editor = context.getSharedPreferences(SYNCHRONIZE_SETTINGS_SHARED_PREFERENCES, MODE_PRIVATE).edit()

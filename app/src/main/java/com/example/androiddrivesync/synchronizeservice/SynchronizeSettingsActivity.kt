@@ -2,6 +2,7 @@ package com.example.androiddrivesync.synchronizeservice
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -55,6 +56,21 @@ class SynchronizeSettingsActivity : AppCompatActivity(), View.OnClickListener {
         CoroutineScope(Dispatchers.IO).launch {
             SynchronizeWorker.updatePeriodicity(this@SynchronizeSettingsActivity)
             dialog.cancel()
+        }
+    }
+
+    fun synchronizeNow(v: View?) {
+        CoroutineScope(Dispatchers.IO).launch {
+            SynchronizeWorker.ifNotCurrentlyRunning(this@SynchronizeSettingsActivity) {
+                Log.i(TAG, "no SynchronizeWorker is currently running")
+                Log.i(TAG, "starting a single SynchronizeWorker")
+                SynchronizeWorker.setupSingleWorkRequest(this@SynchronizeSettingsActivity)
+
+                Log.i(TAG, "cancelling and restarting a PeriodicWorkRequest, if there is one")
+                CoroutineScope(Dispatchers.IO).launch {
+                    SynchronizeWorker.updatePeriodicity(this@SynchronizeSettingsActivity)
+                }
+            }
         }
     }
 
