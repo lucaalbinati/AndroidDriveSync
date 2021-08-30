@@ -64,8 +64,8 @@ class GoogleDriveClient(private val context: Context, authCode: String) {
     private fun initService(authorizationCode: String): Drive {
         suspend fun requestAccessToken(refreshToken: String? = null): GoogleTokenResponse {
             val pref = context.getSharedPreferences(CredentialsSharedPreferences.CREDENTIALS_SHARED_PREFERENCES, MODE_PRIVATE)
-            val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY_NAME, null)
-            val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET_KEY_NAME, null)
+            val clientId = pref.getString(CredentialsSharedPreferences.CLIENT_ID_KEY, null)
+            val clientSecret = pref.getString(CredentialsSharedPreferences.CLIENT_SECRET, null)
 
             return withContext(Dispatchers.IO) {
                 val tokenResponse: GoogleTokenResponse
