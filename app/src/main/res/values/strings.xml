@@ -27,4 +27,6 @@
 
     <string name="synchronization_periodicity_picker_title">Synchronize to Google Drive</string>
     <string name="synchronization_periodicity_picker_cancel">Cancel</string>
+
+    <string name="synchronize_now_button">Synchronize Now</string>
 </resources>

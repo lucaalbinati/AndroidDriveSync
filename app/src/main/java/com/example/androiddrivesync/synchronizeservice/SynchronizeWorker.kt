@@ -45,20 +45,13 @@ class SynchronizeWorker(appContext: Context, workerParams: WorkerParameters) : C
 
         private fun getWorkRequestConstraints(): Constraints {
             return Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.UNMETERED)
                 .setRequiresBatteryNotLow(true)
                 .build()
         }
 
-        suspend fun ifNotCurrentlyRunning(context: Context, callback: () -> Unit) {
-            val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(UNIQUE_WORK_NAME).await()
-            if (workInfos.size == 0) {
-                callback()
-            }
-        }
-
         suspend fun updatePeriodicity(context: Context) {
             // FIXME insert check to see if the last synchronization happened less than 'periodicity' ago
+            // FIXME wait until work is finished instead of cancelling?
             val workInfos = WorkManager.getInstance(context).getWorkInfosForUniqueWork(UNIQUE_WORK_NAME).await()
             when (workInfos.size) {
                 0 -> Log.i(TAG, "no periodic work request were set up")

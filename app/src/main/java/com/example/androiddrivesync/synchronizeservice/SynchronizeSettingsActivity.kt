@@ -4,6 +4,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -49,7 +50,16 @@ class SynchronizeSettingsActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun updatePeriodicityContent() {
-        findViewById<TextView>(R.id.periodicity_text).text = SynchronizeSettingsSharedPreferencesHelper.getPeriodicity(this).format()
+        val periodicity = SynchronizeSettingsSharedPreferencesHelper.getPeriodicity(this)
+        findViewById<TextView>(R.id.periodicity_text).text = periodicity.format()
+
+        if (periodicity == SynchronizePeriodicity.NEVER) {
+            findViewById<Button>(R.id.synchronize_now_button).isClickable = false
+            findViewById<Button>(R.id.synchronize_now_button).setBackgroundColor(getColor(R.color.gray))
+        } else {
+            findViewById<Button>(R.id.synchronize_now_button).isClickable = true
+            findViewById<Button>(R.id.synchronize_now_button).setBackgroundColor(getColor(R.color.colorSecondary))
+        }
     }
 
     private fun updatePeriodicityForWorker(dialog: DialogInterface) {
@@ -61,16 +71,8 @@ class SynchronizeSettingsActivity : AppCompatActivity(), View.OnClickListener {
 
     fun synchronizeNow(v: View?) {
         CoroutineScope(Dispatchers.IO).launch {
-            SynchronizeWorker.ifNotCurrentlyRunning(this@SynchronizeSettingsActivity) {
-                Log.i(TAG, "no SynchronizeWorker is currently running")
-                Log.i(TAG, "starting a single SynchronizeWorker")
-                SynchronizeWorker.setupSingleWorkRequest(this@SynchronizeSettingsActivity)
-
-                Log.i(TAG, "cancelling and restarting a PeriodicWorkRequest, if there is one")
-                CoroutineScope(Dispatchers.IO).launch {
-                    SynchronizeWorker.updatePeriodicity(this@SynchronizeSettingsActivity)
-                }
-            }
+            Log.i(TAG, "starting a single SynchronizeWorker")
+            SynchronizeWorker.setupSingleWorkRequest(this@SynchronizeSettingsActivity)
         }
     }
 
